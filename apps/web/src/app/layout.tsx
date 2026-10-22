@@ -1,12 +1,21 @@
-import type { Metadata } from 'next';
+﻿import type { Metadata } from 'next';
 import './globals.css';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 
 export const metadata: Metadata = {
   title: 'OXENIQ — Powering the Next Digital Era',
-  description: 'A market-priced utility token and decentralized ecosystem on BNB Smart Chain with forward-compatible cross-chain architecture.',
-  keywords: ['OXENIQ', 'BNB Smart Chain', 'BEP-20', 'Web3', 'Crypto', 'Token', 'DeFi'],
+  description: 'Official portal for OXENIQ: A high-security, market-priced utility token on BNB Smart Chain with audited smart contracts and cross-chain architecture.',
+  keywords: ['OXENIQ', 'BNB Smart Chain', 'BEP-20', 'Web3', 'Crypto', 'Token', 'DeFi', 'PancakeSwap'],
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/favicon.png', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
 };
 
 export default function RootLayout({

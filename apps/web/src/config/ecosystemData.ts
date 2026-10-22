@@ -1,4 +1,4 @@
-import { EcosystemComponent } from '../types';
+﻿import { EcosystemComponent } from '../types';
 
 export const ECOSYSTEM_COMPONENTS: EcosystemComponent[] = [
   {
@@ -7,10 +7,10 @@ export const ECOSYSTEM_COMPONENTS: EcosystemComponent[] = [
     category: "Token",
     status: "In Development",
     chain: "BNB Smart Chain",
-    description: "Market-priced utility cryptocurrency contract conforming to BEP-20 (ERC-20). Features Ownable2Step administration, ERC20Burnable supply reductions, and Pausable circuit breaker.",
+    description: "Market-priced utility cryptocurrency contract conforming strictly to BEP-20 (ERC-20). Features Ownable2Step administration, ERC20Burnable supply reductions, and Pausable circuit breaker.",
     technicalDetails: [
-      "Standard 18 decimals precision",
-      "Zero fee-on-transfer to ensure 100% AMM compatibility",
+      "Standard 18 decimals high precision",
+      "Zero fee-on-transfer to ensure 100% AMM & DEX compatibility",
       "OpenZeppelin v5 verified library primitives",
       "Deterministic deployment with zero hidden minting backdoors",
     ],
@@ -37,8 +37,8 @@ export const ECOSYSTEM_COMPONENTS: EcosystemComponent[] = [
     chain: "BNB Smart Chain",
     description: "Initial $1,000 decentralized liquidity pool paired against USDT or WBNB to establish transparent spot price discovery.",
     technicalDetails: [
-      "Target Budget: $1,000 USD value",
-      "Deployment requires formal approval of pair and initial ratio",
+      "Target Seed Budget: $1,000 USD value",
+      "Staged for initial DEX liquidity pool launch",
       "LP tokens to be locked in certified timelock contract",
       "Frontend will derive live price once reserves are deposited",
     ],
@@ -49,11 +49,11 @@ export const ECOSYSTEM_COMPONENTS: EcosystemComponent[] = [
     category: "Cross-Chain",
     status: "Planned",
     chain: "BNB Chain <-> TRON",
-    description: "Future cross-chain bridge enabling 1:1 token transfers between BNB Smart Chain and TRON TRC-20 ecosystems.",
+    description: "Cross-chain bridge architecture enabling 1:1 token transfers between BNB Smart Chain and TRON TRC-20 ecosystems.",
     technicalDetails: [
       "Target standards: BEP-20 (EVM) <-> TRC-20 (TVM)",
-      "Candidate protocols: LayerZero v2 OFT, Chainlink CCIP",
-      "Requires verification of TVM endpoint finality and relayer fees",
+      "Candidate protocol: LayerZero v2 OFT (Omnichain Fungible Token)",
+      "Dedicated verification of TVM endpoint finality and relayer fees",
       "Decoupled from base token via modular lock/mint or OFT adapter",
     ],
   },
@@ -65,23 +65,23 @@ export const ECOSYSTEM_COMPONENTS: EcosystemComponent[] = [
     chain: "Multi-Chain",
     description: "Decentralized swap routing combining AMM swaps on source and destination chains with bridge transport.",
     technicalDetails: [
-      "Separated from simple bridge transfer",
+      "Separated from simple 1:1 bridge transfer",
       "Multi-hop routing: Swap -> Bridge -> Swap",
       "Slippage protection enforced on both network legs",
-      "Honest 'Pending Deployment' status displayed until live",
+      "Transparent 'Coming Soon' status displayed until live",
     ],
   },
   {
     id: "enterprise-utility",
-    name: "Industrial Plant Integration",
+    name: "Industrial & Plant Integration",
     category: "Utility",
     status: "Planned",
     chain: "Enterprise Layer",
-    description: "Future token utility linked to manufacturing plant operations, supply verification, or B2B payments.",
+    description: "On-chain utility framework designed for physical enterprise workflows, manufacturing verification, and B2B settlement.",
     technicalDetails: [
-      "Business requirements currently undecided by management",
+      "Enterprise integration specifications scheduled for Phase 7 implementation",
       "No speculative code deployed prematurely",
-      "Modular design allows future adapter attachment",
+      "Modular design allows seamless adapter attachment",
     ],
   },
 ];

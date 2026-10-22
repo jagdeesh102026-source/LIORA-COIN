@@ -1,4 +1,5 @@
-'use client';
+﻿'use client';
+
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -17,10 +18,10 @@ export const Header: React.FC = () => {
   const navLinks = [
     { name: 'Home', href: '/' },
     { name: 'Ecosystem', href: '/ecosystem' },
-    { name: 'Token', href: '/token' },
-    { name: 'Swap', href: '/swap' },
+    { name: 'Tokenomics', href: '/token' },
+    { name: 'DEX Swap', href: '/swap' },
     { name: 'Cross-Chain', href: '/cross-chain' },
-    { name: 'Docs', href: '/docs' },
+    { name: 'Documentation', href: '/docs' },
   ];
 
   const formatAddress = (addr: string) => {
@@ -36,7 +37,7 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-[var(--border-subtle)] bg-[var(--bg-primary)]/80 backdrop-blur-md">
+    <header className="sticky top-0 z-40 w-full border-b border-[var(--border-subtle)] bg-[var(--bg-primary)]/85 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         <Logo size="md" />
 
@@ -106,7 +107,7 @@ export const Header: React.FC = () => {
           ) : (
             <button
               onClick={() => setIsModalOpen(true)}
-              className="btn-metallic px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2"
+              className="btn-metallic px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-lg"
             >
               <Wallet className="w-4 h-4" />
               <span>Connect Wallet</span>

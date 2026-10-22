@@ -1,100 +1,80 @@
+﻿'use client';
+
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface LogoProps {
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'hero';
+  showWordmark?: boolean;
   showTagline?: boolean;
+  className?: string;
+  href?: string | null;
 }
 
-export const Logo: React.FC<LogoProps> = ({ size = 'md', showTagline = false }) => {
-  const iconSizes = {
-    sm: 32,
-    md: 40,
-    lg: 56,
+export const Logo: React.FC<LogoProps> = ({
+  size = 'md',
+  showWordmark = true,
+  showTagline = false,
+  className = '',
+  href = '/',
+}) => {
+  const dimensions = {
+    sm: { width: 34, height: 34, text: 'text-lg', badge: 'text-[9px]' },
+    md: { width: 44, height: 44, text: 'text-2xl', badge: 'text-[10px]' },
+    lg: { width: 64, height: 64, text: 'text-3xl', badge: 'text-xs' },
+    xl: { width: 96, height: 96, text: 'text-4xl', badge: 'text-sm' },
+    hero: { width: 220, height: 220, text: 'text-5xl', badge: 'text-base' },
   };
 
-  const textSizes = {
-    sm: 'text-xl',
-    md: 'text-2xl',
-    lg: 'text-4xl',
-  };
+  const dim = dimensions[size] || dimensions.md;
 
-  const s = iconSizes[size];
-
-  return (
-    <Link href="/" className="inline-flex items-center gap-3 group focus:outline-none" aria-label="OXENIQ Home">
-      <div className="relative flex items-center justify-center">
-        {/* Glowing aura */}
-        <div 
-          className="absolute rounded-full filter blur-md opacity-70 group-hover:opacity-100 transition-opacity"
+  const content = (
+    <div className={`inline-flex items-center gap-3.5 group ${className}`}>
+      <div className="relative flex items-center justify-center shrink-0">
+        {/* Glowing ambient halo behind official medallion */}
+        <div
+          className="absolute rounded-full filter blur-md opacity-40 group-hover:opacity-75 transition-opacity duration-300 pointer-events-none"
           style={{
-            width: s + 12,
-            height: s + 12,
-            background: 'radial-gradient(circle, rgba(57,123,255,0.4) 0%, rgba(99,179,255,0) 70%)',
+            width: dim.width * 1.15,
+            height: dim.height * 1.15,
+            background: 'radial-gradient(circle, rgba(57,123,255,0.45) 0%, rgba(99,179,255,0) 70%)',
           }}
         />
-        {/* Emblem SVG */}
-        <svg
-          width={s}
-          height={s}
-          viewBox="0 0 100 100"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="relative transition-transform duration-300 group-hover:scale-105"
-        >
-          <defs>
-            <linearGradient id="oxeniqGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#63B3FF" />
-              <stop offset="50%" stopColor="#397BFF" />
-              <stop offset="100%" stopColor="#1742A8" />
-            </linearGradient>
-            <linearGradient id="oxeniqGrad2" x1="0%" y1="100%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#FFFFFF" />
-              <stop offset="60%" stopColor="#C7D2E2" />
-              <stop offset="100%" stopColor="#6B7C96" />
-            </linearGradient>
-            <filter id="shadowGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#397BFF" floodOpacity="0.5" />
-            </filter>
-          </defs>
 
-          {/* Outer Hex Shield */}
-          <polygon
-            points="50,6 88,28 88,72 50,94 12,72 12,28"
-            stroke="url(#oxeniqGrad1)"
-            strokeWidth="4"
-            fill="#0E1626"
-            filter="url(#shadowGlow)"
-          />
-
-          {/* Inner Geometric "O" with Central Energy Ray */}
-          <polygon
-            points="50,18 78,35 78,65 50,82 22,65 22,35"
-            stroke="url(#oxeniqGrad2)"
-            strokeWidth="2.5"
-            fill="none"
-            opacity="0.8"
-          />
-
-          {/* Central Power Diamond Core */}
-          <polygon
-            points="50,32 64,50 50,68 36,50"
-            fill="url(#oxeniqGrad1)"
-          />
-          <circle cx="50" cy="50" r="5" fill="#FFFFFF" />
-        </svg>
+        {/* Official OXENIQ Logo Medallion */}
+        <Image
+          src="/assets/oxeniq-logo.png"
+          alt="OXENIQ Official Logo - Powering the Next Digital Era"
+          width={dim.width}
+          height={dim.height}
+          priority={size === 'md' || size === 'hero' || size === 'lg'}
+          className="relative object-contain transition-transform duration-300 group-hover:scale-105"
+        />
       </div>
 
-      <div className="flex flex-col">
-        <span className={`font-extrabold tracking-wider text-metallic ${textSizes[size]}`}>
-          OXEN<span className="text-gradient-blue">IQ</span>
-        </span>
-        {showTagline && (
-          <span className="text-[10px] tracking-[0.16em] uppercase text-secondary font-medium -mt-1">
-            Powering the Next Digital Era
+      {showWordmark && (
+        <div className="flex flex-col">
+          <span className={`font-black tracking-wider text-metallic ${dim.text} leading-tight`}>
+            OXEN<span className="text-gradient-blue">IQ</span>
           </span>
-        )}
-      </div>
-    </Link>
+          {showTagline && (
+            <span className={`tracking-[0.18em] uppercase text-secondary font-medium -mt-0.5 ${dim.badge}`}>
+              Powering the Next Digital Era
+            </span>
+          )}
+        </div>
+      )}
+    </div>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className="inline-flex items-center focus:outline-none" aria-label="OXENIQ Official Brand Home">
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
 };

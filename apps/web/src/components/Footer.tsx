@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import Link from 'next/link';
 import { Logo } from './Logo';
 
@@ -13,12 +13,12 @@ export const Footer: React.FC = () => {
           <div className="md:col-span-2 space-y-4">
             <Logo size="md" showTagline={true} />
             <p className="text-sm text-secondary max-w-md leading-relaxed">
-              A high-security, market-priced utility token ecosystem built for BNB Smart Chain (BEP-20) 
+              A high-security, market-priced utility token ecosystem engineered for BNB Smart Chain (BEP-20) 
               with verified mathematical token allocation and cross-chain expansion architecture.
             </p>
             <div className="flex items-center gap-2 text-xs text-muted">
               <span className="inline-block w-2 h-2 rounded-full bg-emerald-400" />
-              <span>BNB Smart Chain (BSC Testnet Supported)</span>
+              <span>Target Network: BNB Smart Chain (BEP-20)</span>
             </div>
           </div>
 
@@ -27,20 +27,20 @@ export const Footer: React.FC = () => {
             <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Ecosystem</h4>
             <ul className="space-y-2 text-sm">
               <li><Link href="/ecosystem" className="hover:text-white transition-colors">Components</Link></li>
-              <li><Link href="/token" className="hover:text-white transition-colors">Token Metrics</Link></li>
-              <li><Link href="/swap" className="hover:text-white transition-colors">Swap Terminal</Link></li>
-              <li><Link href="/cross-chain" className="hover:text-white transition-colors">TRON Cross-Chain</Link></li>
+              <li><Link href="/token" className="hover:text-white transition-colors">Tokenomics</Link></li>
+              <li><Link href="/swap" className="hover:text-white transition-colors">DEX Swap Terminal</Link></li>
+              <li><Link href="/cross-chain" className="hover:text-white transition-colors">Cross-Chain Architecture</Link></li>
             </ul>
           </div>
 
-          {/* Documentation & Legal */}
+          {/* Documentation & Resources */}
           <div>
-            <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Architecture</h4>
+            <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Resources</h4>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/docs" className="hover:text-white transition-colors">Documentation Portal</Link></li>
-              <li><Link href="/docs#decisions" className="hover:text-white transition-colors">Open Decisions Log</Link></li>
-              <li><Link href="/docs#contracts" className="hover:text-white transition-colors">Smart Contracts</Link></li>
-              <li><Link href="/docs#security" className="hover:text-white transition-colors">Security Policy</Link></li>
+              <li><Link href="/docs" className="hover:text-white transition-colors">Whitepaper Overview</Link></li>
+              <li><Link href="/docs" className="hover:text-white transition-colors">Smart Contract Specs</Link></li>
+              <li><Link href="/docs" className="hover:text-white transition-colors">Security Disclosures</Link></li>
+              <li><Link href="/docs" className="hover:text-white transition-colors">Developer Guide</Link></li>
             </ul>
           </div>
         </div>
@@ -48,13 +48,13 @@ export const Footer: React.FC = () => {
         {/* Legal Risk Disclosure & Copyright */}
         <div className="pt-8 space-y-4 text-xs text-muted">
           <p className="leading-relaxed">
-            <strong>Disclosures:</strong> OXENIQ is a market-priced digital asset and utility token. It is not a fiat-pegged stablecoin, 
-            nor does it represent guaranteed monetary appreciation or debt instrument. Token purchase allocations, initial liquidity ($1,000 budget), 
-            and cross-chain mechanisms are implemented strictly in accordance with approved smart contract parameters.
+            <strong>Disclosures:</strong> OXENIQ is a market-priced digital utility token. It is not a fiat-pegged stablecoin, 
+            nor does it represent guaranteed monetary returns or equity. Token allocation, liquidity reserves, 
+            and cross-chain mechanisms operate strictly via verified smart contract interfaces.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-[var(--border-subtle)] text-[11px]">
-            <p>&copy; {currentYear} OXENIQ Ecosystem. All rights reserved.</p>
-            <p>Built with OpenZeppelin Contracts v5 & Next.js</p>
+            <p>&copy; {currentYear} OXENIQ Protocol. All rights reserved.</p>
+            <p>Powering the Next Digital Era</p>
           </div>
         </div>
       </div>

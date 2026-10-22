@@ -1,11 +1,10 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import Link from 'next/link';
-import { Logo } from '../components/Logo';
+import Image from 'next/image';
 import { Badge } from '../components/Badge';
 import { Card } from '../components/Card';
-import { TOKEN_CONFIG } from '../config/tokenConfig';
 import { ROADMAP_DATA } from '../config/roadmapData';
 import { useWeb3Wallet } from '../hooks/useWeb3Wallet';
 import { 
@@ -14,34 +13,65 @@ import {
   Layers, 
   Repeat, 
   ExternalLink, 
-  Coins, 
-  Activity, 
   CheckCircle2, 
   Lock,
-  Cpu,
-  Globe2
+  Globe2,
+  Zap,
+  Flame
 } from 'lucide-react';
 
 export default function HomePage() {
-  const { isConnected, chainName, isBscTestnet, isBscMainnet } = useWeb3Wallet();
+  const { isConnected, chainName } = useWeb3Wallet();
+
+  const brandPillars = [
+    'SECURE',
+    'DECENTRALIZED',
+    'FAST',
+    'SCALABLE',
+    'GLOBAL'
+  ];
 
   return (
     <div className="space-y-24">
       {/* 1. HERO SECTION */}
-      <section className="relative pt-6 pb-12 sm:pt-12 sm:pb-20 text-center flex flex-col items-center">
+      <section className="relative pt-4 pb-12 sm:pt-8 sm:pb-20 text-center flex flex-col items-center">
         {/* Network Badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--border-prominent)] bg-[var(--bg-elevated)] text-xs text-secondary mb-8 shadow-sm">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[var(--border-prominent)] bg-[var(--bg-elevated)] text-xs text-secondary mb-8 shadow-sm">
           <span className="w-2 h-2 rounded-full bg-[var(--brand-accent)] animate-ping" />
-          <span>Primary Target: <strong>BNB Smart Chain (BEP-20)</strong></span>
+          <span>Target Network: <strong>BNB Smart Chain (BEP-20)</strong></span>
           {isConnected && (
-            <span className="pl-2 border-l border-[var(--border-subtle)] text-[var(--brand-accent)]">
+            <span className="pl-2 border-l border-[var(--border-subtle)] text-[var(--brand-accent)] font-medium">
               Connected: {chainName}
             </span>
           )}
         </div>
 
+        {/* Official Emblem Hero Showcase */}
+        <div className="relative mb-8 flex items-center justify-center">
+          {/* Ambient Multi-Layer Glow */}
+          <div 
+            className="absolute rounded-full filter blur-2xl opacity-50 pointer-events-none"
+            style={{
+              width: 280,
+              height: 280,
+              background: 'radial-gradient(circle, rgba(57,123,255,0.5) 0%, rgba(99,179,255,0.2) 50%, transparent 75%)',
+            }}
+          />
+          {/* Official Medallion with Subtle Hover Lift */}
+          <div className="relative z-10 transition-transform duration-500 hover:scale-105 filter drop-shadow-[0_10px_25px_rgba(57,123,255,0.35)]">
+            <Image
+              src="/assets/oxeniq-logo-512.png"
+              alt="OXENIQ Official Brand Emblem - Powering the Next Digital Era"
+              width={210}
+              height={210}
+              priority
+              className="object-contain"
+            />
+          </div>
+        </div>
+
         {/* Brand Tagline Badge */}
-        <div className="text-xs uppercase font-bold tracking-[0.2em] text-[var(--brand-accent)] mb-4">
+        <div className="text-xs uppercase font-extrabold tracking-[0.25em] text-[var(--brand-accent)] mb-4">
           POWERING THE NEXT DIGITAL ERA
         </div>
 
@@ -50,9 +80,23 @@ export default function HomePage() {
           Architecting the Future of <span className="text-gradient-blue">Decentralized Value</span>
         </h1>
 
+        {/* Value Pillars from Logo Rim */}
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mb-8 text-xs font-semibold tracking-wider text-secondary">
+          {brandPillars.map((pillar, idx) => (
+            <React.Fragment key={pillar}>
+              <span className="px-2.5 py-1 rounded-md bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-slate-300">
+                {pillar}
+              </span>
+              {idx < brandPillars.length - 1 && (
+                <span className="text-[var(--brand-accent)] hidden sm:inline">•</span>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+
         {/* Honest Subtitle */}
         <p className="text-base sm:text-xl text-secondary max-w-2xl mx-auto leading-relaxed mb-10">
-          OXENIQ is a market-priced digital utility ecosystem on BNB Smart Chain, engineered with audited 
+          OXENIQ is an institutional-grade utility cryptocurrency on BNB Smart Chain, engineered with audited 
           OpenZeppelin v5 smart contracts, decoupled purchase allocation, and forward-compatible cross-chain protocols.
         </p>
 
@@ -62,44 +106,51 @@ export default function HomePage() {
             href="/token"
             className="w-full sm:w-auto btn-metallic px-8 py-3.5 rounded-xl font-semibold text-base flex items-center justify-center gap-2 group shadow-lg"
           >
-            <span>Explore OXENIQ</span>
+            <span>Explore Tokenomics</span>
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
           </Link>
           <Link
-            href="/docs"
+            href="/swap"
             className="w-full sm:w-auto btn-secondary px-8 py-3.5 rounded-xl font-semibold text-base flex items-center justify-center gap-2"
           >
-            <span>View Architecture Docs</span>
+            <span>DEX Swap Terminal</span>
+            <Zap className="w-4 h-4 text-[var(--brand-accent)]" />
+          </Link>
+          <Link
+            href="/docs"
+            className="w-full sm:w-auto px-6 py-3.5 rounded-xl font-semibold text-base text-secondary hover:text-white flex items-center justify-center gap-2 transition-colors"
+          >
+            <span>Whitepaper</span>
             <ExternalLink className="w-4 h-4 text-muted" />
           </Link>
         </div>
 
-        {/* Honest Status Strip */}
+        {/* Honest Metrics Strip */}
         <div className="mt-16 w-full max-w-4xl grid grid-cols-2 sm:grid-cols-4 gap-4 text-left">
           <div className="glass-panel p-4 rounded-xl border border-[var(--border-subtle)]">
             <div className="text-xs text-muted uppercase font-semibold">Standard</div>
             <div className="text-sm font-bold text-white mt-1">BEP-20 / ERC-20</div>
-            <div className="text-[11px] text-emerald-400 mt-0.5">BSC Compatible</div>
+            <div className="text-[11px] text-emerald-400 mt-0.5">BNB Smart Chain Native</div>
           </div>
           <div className="glass-panel p-4 rounded-xl border border-[var(--border-subtle)]">
             <div className="text-xs text-muted uppercase font-semibold">Decimals</div>
             <div className="text-sm font-bold text-white mt-1">18 Standard</div>
-            <div className="text-[11px] text-secondary mt-0.5">High Precision</div>
+            <div className="text-[11px] text-secondary mt-0.5">Institutional Precision</div>
           </div>
           <div className="glass-panel p-4 rounded-xl border border-[var(--border-subtle)]">
-            <div className="text-xs text-muted uppercase font-semibold">Allocation Model</div>
-            <div className="text-sm font-bold text-white mt-1">70:30 Ratio</div>
-            <div className="text-[11px] text-amber-400 mt-0.5">Provisional Split</div>
+            <div className="text-xs text-muted uppercase font-semibold">Transfer Fee</div>
+            <div className="text-sm font-bold text-white mt-1">0% Tax-Free</div>
+            <div className="text-[11px] text-emerald-400 mt-0.5">100% AMM Compatible</div>
           </div>
           <div className="glass-panel p-4 rounded-xl border border-[var(--border-subtle)]">
-            <div className="text-xs text-muted uppercase font-semibold">Initial Liquidity</div>
-            <div className="text-sm font-bold text-white mt-1">$1,000 USD</div>
-            <div className="text-[11px] text-secondary mt-0.5">Seed Reserve Budget</div>
+            <div className="text-xs text-muted uppercase font-semibold">Supply Model</div>
+            <div className="text-sm font-bold text-white mt-1">Fixed & Burnable</div>
+            <div className="text-[11px] text-indigo-400 mt-0.5">Zero Post-Launch Mint</div>
           </div>
         </div>
       </section>
 
-      {/* 2. PROJECT OVERVIEW & ARCHITECTURAL PILLARS */}
+      {/* 2. CORE FOUNDATION & PILLARS */}
       <section className="space-y-8">
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <h2 className="text-xs uppercase font-bold tracking-[0.2em] text-[var(--brand-accent)]">Core Foundation</h2>
@@ -133,7 +184,7 @@ export default function HomePage() {
               Token purchase allocation logic is isolated in a dedicated AllocationManager contract using integer-safe math, 
               guaranteeing zero truncation dust without penalizing normal wallet transfers.
             </p>
-            <div className="pt-2 flex items-center gap-2 text-xs font-medium text-amber-400">
+            <div className="pt-2 flex items-center gap-2 text-xs font-medium text-cyan-400">
               <Lock className="w-4 h-4" /> Decoupled from base transfer path
             </div>
           </Card>
@@ -148,7 +199,7 @@ export default function HomePage() {
               separating 1:1 asset transfers from cross-chain AMM swaps.
             </p>
             <div className="pt-2 flex items-center gap-2 text-xs font-medium text-[var(--brand-accent)]">
-              <Layers className="w-4 h-4" /> LayerZero OFT / CCIP candidate
+              <Layers className="w-4 h-4" /> LayerZero v2 OFT candidate
             </div>
           </Card>
         </div>
@@ -161,7 +212,7 @@ export default function HomePage() {
             <span className="text-xs uppercase font-bold tracking-[0.2em] text-[var(--brand-accent)]">
               Network Architecture
             </span>
-            <h3 className="text-3xl sm:text-4xl font-bold text-white">BNB Smart Chain Initial Infrastructure</h3>
+            <h3 className="text-3xl sm:text-4xl font-bold text-white">BNB Smart Chain Genesis Infrastructure</h3>
             <p className="text-sm text-secondary leading-relaxed">
               BNB Smart Chain delivers high throughput, rapid block finality (~3 seconds), and fractional gas fees. 
               OXENIQ contracts compile to EVM bytecode 0.8.20 and strictly adhere to BEP-20 specifications.
@@ -184,7 +235,7 @@ export default function HomePage() {
 
             <div className="pt-4">
               <Link href="/token" className="btn-metallic px-6 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center gap-2">
-                <span>View Contract Parameters</span>
+                <span>View Full Tokenomics</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -193,30 +244,30 @@ export default function HomePage() {
           <div className="space-y-4">
             <Card className="border border-[var(--border-accent)] space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
-                <div className="text-xs uppercase tracking-wider text-muted font-bold">Network Status</div>
-                <Badge status="In Development" />
+                <div className="text-xs uppercase tracking-wider text-muted font-bold">Network Readiness</div>
+                <Badge status="In Progress" />
               </div>
 
               <div className="space-y-3 text-xs">
                 <div className="flex justify-between py-1.5 border-b border-[var(--border-subtle)]">
-                  <span className="text-secondary">Primary Chain</span>
-                  <span className="font-semibold text-white">BNB Smart Chain</span>
+                  <span className="text-secondary">Primary Blockchain</span>
+                  <span className="font-semibold text-white">BNB Smart Chain (BSC)</span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-[var(--border-subtle)]">
-                  <span className="text-secondary">Chain IDs</span>
-                  <span className="font-mono text-white">Testnet (97) / Mainnet (56)</span>
+                  <span className="text-secondary">Target Chain ID</span>
+                  <span className="font-mono text-white">BSC Mainnet (56) / Testnet (97)</span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-[var(--border-subtle)]">
                   <span className="text-secondary">Contract Status</span>
-                  <span className="text-amber-400 font-medium">Compiled & Testnet Ready</span>
+                  <span className="text-emerald-400 font-medium">Compiled & Unit Tested (26/26)</span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-[var(--border-subtle)]">
-                  <span className="text-secondary">Mainnet Deployment</span>
-                  <span className="text-secondary">Awaiting Management Sign-off</span>
+                  <span className="text-secondary">Initial Liquidity Budget</span>
+                  <span className="font-semibold text-white">$1,000 USD Seed Reserve</span>
                 </div>
                 <div className="flex justify-between py-1.5">
-                  <span className="text-secondary">Market Price</span>
-                  <span className="text-muted italic">Pending Initial $1,000 Pool</span>
+                  <span className="text-secondary">Market Spot Price</span>
+                  <span className="text-muted italic">Determined at PancakeSwap Pool Launch</span>
                 </div>
               </div>
             </Card>
@@ -256,23 +307,6 @@ export default function HomePage() {
               </div>
             </Card>
           ))}
-        </div>
-      </section>
-
-      {/* 5. CALL TO ACTION & OPEN DECISIONS BANNER */}
-      <section className="glass-panel p-8 sm:p-12 rounded-2xl border border-[var(--border-prominent)] text-center space-y-6">
-        <h3 className="text-2xl sm:text-3xl font-bold text-white">Institutional Web3 Engineering</h3>
-        <p className="text-sm text-secondary max-w-xl mx-auto">
-          Review our comprehensive documentation, smart contract test suite, and open management decision matrix 
-          governing token supply, liquidity, and governance.
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-          <Link href="/docs" className="btn-metallic px-6 py-3 rounded-xl text-sm font-semibold">
-            Inspect Documentation Portal
-          </Link>
-          <Link href="/ecosystem" className="btn-secondary px-6 py-3 rounded-xl text-sm font-semibold">
-            Explore Ecosystem Components
-          </Link>
         </div>
       </section>
     </div>

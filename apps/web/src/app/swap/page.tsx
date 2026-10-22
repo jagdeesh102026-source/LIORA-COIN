@@ -1,10 +1,10 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { Card } from '../../components/Card';
-import { Badge } from '../../components/Badge';
 import { useWeb3Wallet } from '../../hooks/useWeb3Wallet';
-import { ArrowDown, Settings, AlertCircle, RefreshCw, Wallet, Shield } from 'lucide-react';
+import { ArrowDown, Settings, AlertCircle, Wallet, Shield } from 'lucide-react';
 
 export default function SwapPage() {
   const { isConnected, address, balance, connect } = useWeb3Wallet();
@@ -22,7 +22,7 @@ export default function SwapPage() {
         <h1 className="text-xs uppercase font-bold tracking-[0.2em] text-[var(--brand-accent)]">DEX Swap Terminal</h1>
         <h2 className="text-3xl sm:text-4xl font-extrabold text-white">Exchange Tokens</h2>
         <p className="text-secondary text-xs sm:text-sm">
-          Decentralized token exchange interface for BNB Smart Chain.
+          Decentralized token exchange terminal for the OXENIQ ecosystem on BNB Smart Chain.
         </p>
       </div>
 
@@ -30,11 +30,11 @@ export default function SwapPage() {
       <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-950/20 text-amber-300 text-xs space-y-1.5">
         <div className="flex items-center gap-2 font-bold">
           <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-          <span>Liquidity Pool Deployment Pending</span>
+          <span>Liquidity Pool Deployment Staged</span>
         </div>
         <p className="text-amber-200/80 leading-relaxed">
-          Initial $1,000 liquidity pool on PancakeSwap has not been funded yet. 
-          Live transaction execution is safely disabled on this terminal to prevent lost funds.
+          Initial $1,000 liquidity pool on PancakeSwap will be deployed soon. 
+          Live transaction execution is safely disabled on this terminal until liquidity is established.
         </p>
       </div>
 
@@ -53,7 +53,7 @@ export default function SwapPage() {
         <div className="p-4 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-2">
           <div className="flex items-center justify-between text-xs text-secondary">
             <span>Pay</span>
-            <span>Balance: {balance ? `${balance} tBNB` : '0.00'}</span>
+            <span>Balance: {balance ? `${balance} BNB` : '0.00 BNB'}</span>
           </div>
 
           <div className="flex items-center justify-between gap-4">
@@ -78,7 +78,7 @@ export default function SwapPage() {
           </div>
         </div>
 
-        {/* To Token Input */}
+        {/* To Token Input (with Official OXENIQ Logo) */}
         <div className="p-4 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-2">
           <div className="flex items-center justify-between text-xs text-secondary">
             <span>Receive (Estimated)</span>
@@ -93,21 +93,27 @@ export default function SwapPage() {
               className="w-full bg-transparent text-2xl font-bold text-white focus:outline-none cursor-default"
             />
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] text-sm font-bold text-white shrink-0">
-              <span className="w-4 h-4 rounded-full bg-blue-500 inline-block" />
-              <span>OXENIQ</span>
+              <Image
+                src="/assets/oxeniq-logo-128.png"
+                alt="OXENIQ Token Logo"
+                width={20}
+                height={20}
+                className="object-contain shrink-0"
+              />
+              <span className="font-extrabold text-white">OXENIQ</span>
             </div>
           </div>
         </div>
 
-        {/* Pricing details */}
+        {/* Indicative pricing details */}
         <div className="p-3 rounded-lg bg-[var(--bg-primary)] text-xs text-secondary space-y-1.5">
           <div className="flex justify-between">
-            <span>Rate</span>
-            <span className="text-white">Indicative: 1 BNB ≈ 100 OXENIQ</span>
+            <span>Indicative Rate</span>
+            <span className="text-white">1 BNB ≈ 100 OXENIQ</span>
           </div>
           <div className="flex justify-between">
-            <span>Router</span>
-            <span className="text-muted">PancakeSwap V2 (Unconfigured)</span>
+            <span>DEX Router</span>
+            <span className="text-muted">PancakeSwap V2 (Staged)</span>
           </div>
           <div className="flex justify-between">
             <span>Estimated Network Fee</span>
@@ -121,12 +127,12 @@ export default function SwapPage() {
             disabled
             className="w-full py-3.5 rounded-xl font-bold text-sm bg-[var(--bg-elevated)] text-muted border border-[var(--border-prominent)] cursor-not-allowed"
           >
-            Swap Disabled (Pool Pending)
+            Swap Disabled (Awaiting Pool Launch)
           </button>
         ) : (
           <button
             onClick={connect}
-            className="w-full btn-metallic py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
+            className="w-full btn-metallic py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg"
           >
             <Wallet className="w-4 h-4" />
             <span>Connect Wallet to Swap</span>

@@ -1,132 +1,139 @@
-'use client';
+﻿'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
+import Image from 'next/image';
 import { Card } from '../../components/Card';
 import { Badge } from '../../components/Badge';
-import { ArrowRight, Layers, ShieldCheck, AlertCircle, Cpu, Network } from 'lucide-react';
+import { ArrowRight, Layers, ShieldCheck, AlertCircle, Globe2, Network, CheckCircle2, Lock } from 'lucide-react';
 
 export default function CrossChainPage() {
-  const [amount, setAmount] = useState('');
-  const [sourceChain, setSourceChain] = useState('BNB Smart Chain (BEP-20)');
-  const [destChain, setDestChain] = useState('TRON Network (TRC-20)');
-
   return (
     <div className="space-y-12">
       {/* Header */}
-      <div className="space-y-4 max-w-3xl">
-        <h1 className="text-xs uppercase font-bold tracking-[0.2em] text-[var(--brand-accent)]">Interoperability</h1>
-        <h2 className="text-3xl sm:text-5xl font-extrabold text-white">Cross-Chain Bridge</h2>
-        <p className="text-secondary text-sm sm:text-base leading-relaxed">
-          Architectural framework for bidirectional token transfers and swaps between BNB Smart Chain and TRON.
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-[var(--border-subtle)]">
+        <div className="space-y-3 max-w-2xl">
+          <h1 className="text-xs uppercase font-bold tracking-[0.2em] text-[var(--brand-accent)]">Interoperability</h1>
+          <h2 className="text-3xl sm:text-5xl font-extrabold text-white">Cross-Chain Architecture</h2>
+          <p className="text-secondary text-sm sm:text-base leading-relaxed">
+            Multi-chain expansion blueprint establishing verifiable cross-chain communication between BNB Smart Chain and TRON.
+          </p>
+        </div>
+
+        {/* Brand Emblem Mini-Showcase */}
+        <div className="relative shrink-0 flex items-center justify-center self-start md:self-auto">
+          <div 
+            className="absolute rounded-full filter blur-xl opacity-40 pointer-events-none"
+            style={{
+              width: 130,
+              height: 130,
+              background: 'radial-gradient(circle, rgba(57,123,255,0.4) 0%, transparent 70%)',
+            }}
+          />
+          <Image
+            src="/assets/oxeniq-logo-512.png"
+            alt="OXENIQ Cross-Chain Architecture"
+            width={100}
+            height={100}
+            className="relative object-contain filter drop-shadow-md"
+          />
+        </div>
       </div>
 
-      {/* In-Development Banner */}
+      {/* Honest Status Banner */}
       <div className="p-4 rounded-xl border border-[var(--brand-accent)]/30 bg-blue-950/20 text-blue-200 text-xs space-y-1.5">
         <div className="flex items-center gap-2 font-bold text-[var(--brand-accent)]">
           <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>Cross-Chain Protocol Under Architecture Review</span>
+          <span>Cross-Chain Expansion: Coming Soon (Phase 6 Roadmap)</span>
         </div>
         <p className="text-secondary leading-relaxed">
-          TRON compatibility requires a non-EVM (TVM) bridge adapter. In accordance with project security guardrails, 
-          bridging will be activated once the messaging provider (e.g., LayerZero v2 OFT) and multi-sig verifiers are formally authorized.
+          BNB Smart Chain is the active genesis network. Bridging to TRON requires dedicated non-EVM (TVM) adapters and relayer infrastructure. 
+          Bridge transfers and swaps will be unlocked following mainnet liquidity launch and independent security auditing.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Bridge Terminal */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card elevated className="border border-[var(--border-prominent)] space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
-              <span className="text-sm font-bold text-white">Transfer Simulator</span>
-              <Badge status="Planned" />
-            </div>
+      {/* Architectural Separation: Transfers vs Swaps */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="space-y-4">
+          <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-[var(--brand-accent)]">
+            <Layers className="w-5 h-5" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-white">1:1 Bridge Transfers (OFT)</h3>
+            <span className="text-xs text-[var(--brand-accent)]">Direct Asset Movement</span>
+          </div>
+          <p className="text-xs text-secondary leading-relaxed">
+            Transfers OXENIQ directly between networks via LayerZero v2 Omnichain Fungible Token (OFT) standards. 
+            Tokens locked or burned on the source chain are minted on the target chain at exact 1:1 parity with zero AMM slippage.
+          </p>
+          <div className="pt-2 text-xs text-emerald-400 flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" /> Zero price slippage
+          </div>
+        </Card>
 
-            {/* Source & Destination selectors */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-3.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-1">
-                <span className="text-xs text-muted">From Network</span>
-                <div className="text-sm font-bold text-white flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-yellow-500" />
-                  <span>{sourceChain}</span>
-                </div>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-1">
-                <span className="text-xs text-muted">To Network</span>
-                <div className="text-sm font-bold text-white flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-red-500" />
-                  <span>{destChain}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Amount input */}
-            <div className="p-4 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-2">
-              <div className="flex justify-between text-xs text-secondary">
-                <span>Amount to Bridge</span>
-                <span>Balance: 0.00 OXENIQ</span>
-              </div>
-              <input
-                type="number"
-                placeholder="0.0"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="w-full bg-transparent text-2xl font-bold text-white focus:outline-none"
-              />
-            </div>
-
-            {/* Transfer vs Swap Explanation */}
-            <div className="p-4 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-2 text-xs text-secondary">
-              <div className="font-bold text-white">Transfer vs. Cross-Chain Swap</div>
-              <p className="leading-relaxed">
-                <strong>Bridge Transfer:</strong> Moves OXENIQ 1:1 via lock/mint or OFT burn/mint.<br />
-                <strong>Cross-Chain Swap:</strong> Executes a DEX trade on BNB Chain, bridges the intermediary asset, and swaps into target token on TRON.
-              </p>
-            </div>
-
-            <button
-              disabled
-              className="w-full py-3.5 rounded-xl font-bold text-sm bg-[var(--bg-elevated)] text-muted border border-[var(--border-prominent)] cursor-not-allowed"
-            >
-              Bridge Feature in Development
-            </button>
-          </Card>
-        </div>
-
-        {/* Architecture Comparison Panel */}
-        <div className="space-y-6">
-          <Card className="space-y-4">
-            <h3 className="text-base font-bold text-white">Cross-Chain Provider Matrix</h3>
-            
-            <div className="space-y-3 text-xs">
-              <div className="p-3 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-1">
-                <div className="flex justify-between font-bold text-white">
-                  <span>LayerZero OFT v2</span>
-                  <span className="text-[var(--brand-accent)]">Candidate #1</span>
-                </div>
-                <p className="text-muted">Direct Omnichain Fungible Token standard. Supports EVM and TRON endpoints via DVN verifiers.</p>
-              </div>
-
-              <div className="p-3 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-1">
-                <div className="flex justify-between font-bold text-white">
-                  <span>Chainlink CCIP</span>
-                  <span className="text-secondary">EVM Only</span>
-                </div>
-                <p className="text-muted">Industry benchmark for EVM-to-EVM; non-EVM TRON support currently requires custom off-chain relayer.</p>
-              </div>
-
-              <div className="p-3 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-1">
-                <div className="flex justify-between font-bold text-white">
-                  <span>Dedicated Lock/Mint</span>
-                  <span className="text-amber-400">Custom Bridge</span>
-                </div>
-                <p className="text-muted">Custodial multisig vault locking tokens on BSC and minting wrapped TRC-20 on TRON.</p>
-              </div>
-            </div>
-          </Card>
-        </div>
+        <Card className="space-y-4">
+          <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+            <Network className="w-5 h-5" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-white">Cross-Chain Multi-Hop Swaps</h3>
+            <span className="text-xs text-cyan-400">DEX Routing Aggregation</span>
+          </div>
+          <p className="text-xs text-secondary leading-relaxed">
+            Executes multi-step decentralized trades: swapping OXENIQ on PancakeSwap (BSC), bridging the intermediate stable asset, 
+            and routing through SunSwap (TRON). Requires secondary liquidity reserves on both networks.
+          </p>
+          <div className="pt-2 text-xs text-secondary flex items-center gap-2">
+            <Lock className="w-4 h-4" /> Requires dual-chain liquidity pools
+          </div>
+        </Card>
       </div>
+
+      {/* Technical Comparison Table */}
+      <Card className="space-y-6">
+        <div className="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
+          <h3 className="text-lg font-bold text-white">Technical Infrastructure: BSC vs. TRON</h3>
+          <Badge status="Planned" />
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs text-secondary">
+            <thead>
+              <tr className="border-b border-[var(--border-subtle)] text-white">
+                <th className="py-3 px-4 font-semibold">Dimension</th>
+                <th className="py-3 px-4 font-semibold text-[var(--brand-accent)]">BNB Smart Chain (Genesis)</th>
+                <th className="py-3 px-4 font-semibold text-red-400">TRON Network (Target)</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--border-subtle)]">
+              <tr>
+                <td className="py-3 px-4 font-medium text-white">Virtual Machine</td>
+                <td className="py-3 px-4">EVM (Ethereum Virtual Machine)</td>
+                <td className="py-3 px-4">TVM (TRON Virtual Machine)</td>
+              </tr>
+              <tr>
+                <td className="py-3 px-4 font-medium text-white">Token Standard</td>
+                <td className="py-3 px-4">BEP-20 (Solidity 0.8.20)</td>
+                <td className="py-3 px-4">TRC-20 (TVM Compatible)</td>
+              </tr>
+              <tr>
+                <td className="py-3 px-4 font-medium text-white">Gas / Resource Model</td>
+                <td className="py-3 px-4">BNB (Gas Wei)</td>
+                <td className="py-3 px-4">TRX (Energy & Bandwidth)</td>
+              </tr>
+              <tr>
+                <td className="py-3 px-4 font-medium text-white">Wallet Ecosystem</td>
+                <td className="py-3 px-4">MetaMask, TrustWallet, Rabby (EIP-1193)</td>
+                <td className="py-3 px-4">TronLink (tronWeb)</td>
+              </tr>
+              <tr>
+                <td className="py-3 px-4 font-medium text-white">Bridge Architecture</td>
+                <td className="py-3 px-4">LayerZero v2 EndpointV2</td>
+                <td className="py-3 px-4">LayerZero TVM Adapter / Relayer</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </Card>
     </div>
   );
 }
