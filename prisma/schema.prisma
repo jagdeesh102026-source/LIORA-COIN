@@ -1,0 +1,762 @@
+// LIORA COIN — Production PostgreSQL Database Schema
+// Phase 2: Enterprise Relational Models, Integrity Constraints & Financial Ledger
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum UserRole {
+  USER
+  TRADER
+  VIP
+  ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum SubscriptionStatus {
+  NO_SUBSCRIPTION
+  TRIAL_ACTIVE
+  TRIAL_EXPIRED
+  ACTIVE_PAID
+  EXPIRED
+  REVOKED
+}
+
+enum PaymentStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentToken {
+  USDT
+  LIORA
+}
+
+enum PurchaseIntentStatus {
+  INITIATED
+  PENDING_PAYMENT
+  PAYMENT_VERIFIED
+  ALLOCATED
+  FAILED
+  CANCELLED
+}
+
+enum AllocationClaimStatus {
+  LOCKED
+  UNLOCKED
+  CLAIMED
+  REVOKED
+}
+
+enum OrderSide {
+  BUY
+  SELL
+}
+
+enum OrderType {
+  MARKET
+  LIMIT
+}
+
+enum OrderStatus {
+  OPEN
+  PARTIALLY_FILLED
+  FILLED
+  CANCELLED
+  REJECTED
+}
+
+enum LedgerEntryType {
+  CREDIT
+  DEBIT
+}
+
+enum LedgerAccountType {
+  USER_AVAILABLE
+  USER_LOCKED
+  PLATFORM_CUSTODY
+  CLEARING
+  FEE
+}
+
+enum LedgerReason {
+  DEPOSIT
+  WITHDRAWAL
+  TRADE
+  ALLOCATION_LOCK
+  COMMISSION
+  FEE
+  REORGANIZATION_ADJUSTMENT
+}
+
+// ============================================================================
+// 1. IDENTITY & AUTHENTICATION
+// ============================================================================
+
+model User {
+  id                  String         @id @default(uuid())
+  username            String         @unique
+  email               String?        @unique
+  passwordHash        String?
+  role                UserRole       @default(USER)
+  accountStatus       AccountStatus  @default(ACTIVE)
+  isDevelopmentOnly   Boolean        @default(false)
+  mfaSecret           String?
+  isMfaEnabled        Boolean        @default(false)
+  failedLoginAttempts Int            @default(0)
+  lockedUntil         DateTime?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  wallets             VerifiedWallet[]
+  trial               TradingBotTrial?
+  subscriptions       TradingBotSubscription[]
+  sessions            TradingBotSession[]
+  auditLogs           AuditLog[]
+  quotes              InvestorQuote[]
+  purchaseIntents     PurchaseIntent[]
+  allocations         InvestorAllocation[]
+  vestingSchedules    VestingSchedule[]
+  tradingOrders       TradingOrder[]
+  balances            TokenBalance[]
+  movements           BalanceMovement[]
+  ledgerAccounts      LedgerAccount[]
+
+  @@map("users")
+}
+
+model VerifiedWallet {
+  id              String    @id @default(uuid())
+  walletAddress   String    @unique // Normalized lowercase for EVM/BTC, case-preserved for TRON
+  userId          String
+  chainId         Int       @default(97)
+  verifiedAt      DateTime  @default(now())
+  isPrimary       Boolean   @default(false)
+  nonceChallenge  String?
+  signatureProof  String?
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments        PaymentTransaction[]
+
+  @@index([userId])
+  @@index([walletAddress])
+  @@map("verified_wallets")
+}
+
+model AuthNonce {
+  id          String    @id @default(uuid())
+  nonce       String    @unique
+  address     String
+  domain      String
+  uri         String
+  chainId     Int       @default(97)
+  statement   String?
+  issuedAt    DateTime  @default(now())
+  expiresAt   DateTime
+  consumed    Boolean   @default(false)
+  consumedAt  DateTime?
+
+  @@index([address])
+  @@index([nonce])
+  @@map("auth_nonces")
+}
+
+model TradingBotSession {
+  id                String    @id @default(uuid())
+  userId            String
+  sessionIdentifier String    @unique
+  tokenHash         String
+  ipAddress         String?
+  activatedAt       DateTime  @default(now())
+  expiresAt         DateTime
+  isRevoked         Boolean   @default(false)
+  revokedAt         DateTime?
+  revocationReason  String?
+
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sessionIdentifier])
+  @@map("trading_bot_sessions")
+}
+
+// ============================================================================
+// 2. PRE-LAUNCH OFFERING, INVESTOR ALLOCATIONS & VESTING
+// ============================================================================
+
+model InvestorQuote {
+  id                    String    @id @default(uuid())
+  quoteId               String    @unique
+  userId                String
+  walletAddress         String
+  investmentAmount      Decimal   @db.Decimal(28, 8)
+  currency              String    // 'USD' or 'INR'
+  investmentAmountUSD   Decimal   @db.Decimal(28, 8)
+  tokenPriceUSD         String
+  tokenPriceINR         String
+  tokenQuantity         String    // 18-decimal base units string
+  lockTier              String
+  lockMonths            Int       // 3, 6, 12
+  lockStartTimeUTC      DateTime
+  estimatedUnlockTimeUTC DateTime
+  policyVersion         Int
+  issuedAt              DateTime  @default(now())
+  expiresAt             DateTime
+  consumed              Boolean   @default(false)
+  consumedAt            DateTime?
+
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purchaseIntents       PurchaseIntent[]
+
+  @@index([quoteId])
+  @@index([userId])
+  @@map("investor_quotes")
+}
+
+model PurchaseIntent {
+  id                String               @id @default(uuid())
+  idempotencyKey    String               @unique // Enforces single intent per client action
+  userId            String
+  quoteId           String
+  walletAddress     String
+  status            PurchaseIntentStatus @default(INITIATED)
+  amountUSD         Decimal              @db.Decimal(28, 8)
+  tokenQuantity     String               // 18-decimal base units
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  user              User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quote             InvestorQuote        @relation(fields: [quoteId], references: [quoteId])
+  payment           PaymentTransaction?
+  allocation        InvestorAllocation?
+
+  @@index([userId])
+  @@index([quoteId])
+  @@map("purchase_intents")
+}
+
+model InvestorAllocation {
+  id                        String                @id @default(uuid())
+  purchaseId                String                @unique
+  idempotencyKey            String?               @unique
+  userId                    String
+  walletAddress             String
+  investmentAmountUSD       Decimal               @db.Decimal(28, 8)
+  tokenQuantity             String                // Exact 18-decimal base units string
+  lockTierMonths            Int                   // 3, 6, 12
+  lockStartTimeUTC          DateTime
+  unlockTimeUTC             DateTime
+  policyVersion             Int
+  paymentVerificationStatus String                @default("VERIFIED") // PENDING, VERIFIED, REJECTED
+  claimStatus               AllocationClaimStatus @default(LOCKED)
+  txHash                    String?
+  isDemoAllocation          Boolean               @default(false)
+  vestingScheduleId         String?
+  purchaseIntentId          String?               @unique
+  createdAt                 DateTime              @default(now())
+
+  user                      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purchaseIntent            PurchaseIntent?       @relation(fields: [purchaseIntentId], references: [id])
+  vestingSchedule           VestingSchedule?      @relation(fields: [vestingScheduleId], references: [id])
+
+  @@index([userId])
+  @@index([walletAddress])
+  @@index([claimStatus])
+  @@map("investor_allocations")
+}
+
+model VestingSchedule {
+  id                    String    @id @default(uuid())
+  userId                String
+  beneficiaryWallet     String
+  totalTokensRaw        String    // 18-decimal base units string
+  releasedTokensRaw     String    @default("0")
+  cliffDurationMonths   Int       @default(0)
+  lockDurationMonths    Int       // 3, 6, 12
+  startAt               DateTime
+  cliffEndAt            DateTime
+  lockEndAt             DateTime
+  isRevoked             Boolean   @default(false)
+  revokedAt             DateTime?
+  onChainVaultContract  String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  allocations           InvestorAllocation[]
+
+  @@index([userId])
+  @@index([beneficiaryWallet])
+  @@map("vesting_schedules")
+}
+
+// ============================================================================
+// 3. SETTLEMENT, PAYMENTS & DOUBLE-SPEND IDEMPOTENCY
+// ============================================================================
+
+model PaymentTransaction {
+  id                        String          @id @default(uuid())
+  txHash                    String          // Unique payment identifier per network
+  chainId                   Int
+  networkId                 String          // e.g. bsc-testnet, bsc-mainnet
+  tokenAddress              String
+  payingWallet              String
+  treasuryAddress           String
+  amount                    Decimal         @db.Decimal(36, 18)
+  amountRaw                 String          // BigInt base units string
+  tokenSymbol               PaymentToken
+  status                    PaymentStatus   @default(PENDING)
+  blockNumber               BigInt?
+  confirmations             Int             @default(0)
+  associatedSubscriptionId  String?
+  purchaseIntentId          String?         @unique
+  idempotencyKey            String?         @unique
+  reorgDetected             Boolean         @default(false)
+  verifiedAt                DateTime?
+  createdAt                 DateTime        @default(now())
+  updatedAt                 DateTime        @updatedAt
+
+  wallet                    VerifiedWallet? @relation(fields: [payingWallet], references: [walletAddress])
+  subscription              TradingBotSubscription? @relation(fields: [associatedSubscriptionId], references: [id])
+  purchaseIntent            PurchaseIntent? @relation(fields: [purchaseIntentId], references: [id])
+
+  @@unique([txHash, chainId])
+  @@index([txHash])
+  @@index([payingWallet])
+  @@index([networkId])
+  @@map("payment_transactions")
+}
+
+// ============================================================================
+// 4. TRADING ORDERS, EXECUTIONS & DEMO ISOLATION
+// ============================================================================
+
+model TradingOrder {
+  id            String          @id @default(uuid())
+  orderId       String          @unique
+  userId        String
+  pair          String          // e.g. LIORA/USDT
+  side          OrderSide
+  orderType     OrderType       @default(MARKET)
+  price         Decimal?        @db.Decimal(28, 8)
+  amount        Decimal         @db.Decimal(28, 18)
+  amountRaw     String
+  filledAmount  Decimal         @default(0) @db.Decimal(28, 18)
+  status        OrderStatus     @default(OPEN)
+  isDemoOrder   Boolean         @default(true) // Explicit demo vs production order separation
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  executions    OrderExecution[]
+
+  @@index([userId])
+  @@index([pair])
+  @@index([status])
+  @@map("trading_orders")
+}
+
+model OrderExecution {
+  id              String        @id @default(uuid())
+  orderId         String
+  executionPrice  Decimal       @db.Decimal(28, 8)
+  executedAmount  Decimal       @db.Decimal(28, 18)
+  feeAmount       Decimal       @db.Decimal(28, 18)
+  feeAsset        String
+  executedAt      DateTime      @default(now())
+
+  order           TradingOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("order_executions")
+}
+
+// ============================================================================
+// 5. DOUBLE-ENTRY FINANCIAL LEDGER & TOKEN BALANCES
+// ============================================================================
+
+model TokenBalance {
+  id               String            @id @default(uuid())
+  userId           String
+  tokenSymbol      String            // USDT, LIORA, BNB
+  assetId          String?           // Canonical Asset Identifier (e.g. bsc-testnet:bep20:0x...)
+  networkId        String?
+  standard         String?
+  contractAddress  String?
+  decimals         Int?
+  balance          Decimal
+  balanceRaw       String            // BigInt units as string
+  balanceBaseUnits Decimal           @default(0) @db.Decimal(78, 0)
+  lockedBalance    Decimal           @default(0)
+  lockedBaseUnits  Decimal           @default(0) @db.Decimal(78, 0)
+  isDemoBalance    Boolean           @default(true) // Segregates demo balances from real production balances
+  updatedAt        DateTime          @updatedAt
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movements        BalanceMovement[]
+
+  @@unique([userId, tokenSymbol, isDemoBalance])
+  @@unique([userId, assetId, isDemoBalance])
+  @@index([userId])
+  @@map("token_balances")
+}
+
+model BalanceMovement {
+  id              String          @id @default(uuid())
+  balanceId       String
+  userId          String
+  tokenSymbol     String
+  amount          Decimal         @db.Decimal(36, 18)
+  amountRaw       String
+  entryType       LedgerEntryType
+  reason          LedgerReason
+  referenceId     String?
+  idempotencyKey  String?         @unique
+  isDemo          Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+
+  balance         TokenBalance    @relation(fields: [balanceId], references: [id], onDelete: Cascade)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([balanceId])
+  @@index([createdAt])
+  @@map("balance_movements")
+}
+
+model LedgerAccount {
+  id          String            @id @default(uuid())
+  userId      String?
+  accountType LedgerAccountType
+  assetId     String            // Canonical Asset Key (e.g. bsc-testnet:bep20:0x...)
+  isDemo      Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  user        User?             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  postings    LedgerPosting[]
+
+  @@unique([id, assetId])
+  @@index([userId])
+  @@index([assetId])
+  @@map("ledger_accounts")
+}
+
+model JournalTransaction {
+  id             String                @id @default(uuid())
+  referenceId    String?
+  reason         LedgerReason
+  description    String?
+  isDemo         Boolean               @default(false)
+  reversalOfId   String?
+  idempotencyKey String?               @unique
+  createdAt      DateTime              @default(now())
+  postedAt       DateTime              @default(now())
+
+  reversalOf     JournalTransaction?   @relation("JournalReversals", fields: [reversalOfId], references: [id], onDelete: Restrict)
+  reversals      JournalTransaction[]  @relation("JournalReversals")
+  postings       LedgerPosting[]
+
+  @@index([referenceId])
+  @@index([reason])
+  @@index([createdAt])
+  @@map("journal_transactions")
+}
+
+model LedgerPosting {
+  id              String              @id @default(uuid())
+  journalId       String
+  accountId       String
+  assetId         String              // Canonical Asset ID
+  direction       LedgerEntryType
+  amountBaseUnits Decimal             @db.Decimal(78, 0)
+  sequence        Int                 @default(0)
+  createdAt       DateTime            @default(now())
+
+  journal         JournalTransaction  @relation(fields: [journalId], references: [id], onDelete: Restrict)
+  account         LedgerAccount       @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  @@unique([journalId, sequence])
+  @@index([journalId])
+  @@index([accountId])
+  @@index([assetId])
+  @@map("ledger_postings")
+}
+
+// ============================================================================
+// 6. TRADING BOT SUBSCRIPTIONS & ENTITLEMENTS
+// ============================================================================
+
+model TradingBotTrial {
+  id                String    @id @default(uuid())
+  userId            String    @unique // Strict anti-abuse: max 1 trial per user
+  walletAddress     String    @unique // Strict anti-abuse: max 1 trial per wallet
+  startedAt         DateTime  @default(now())
+  expiresAt         DateTime
+  durationHours     Int       @default(48)
+  trialUsed         Boolean   @default(true)
+  isRevoked         Boolean   @default(false)
+  revokedAt         DateTime?
+  revocationReason  String?
+
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([walletAddress])
+  @@map("trading_bot_trials")
+}
+
+model SubscriptionPlan {
+  id                  String             @id
+  name                String
+  durationDays        Int
+  durationHours       Int?
+  priceUsd            Decimal            @db.Decimal(10, 2)
+  priceLiora          Decimal            @db.Decimal(18, 4)
+  priceUsdt           Decimal            @db.Decimal(18, 4)
+  billingPeriodLabel  String
+  isPopular           Boolean            @default(false)
+  features            String[]
+  isActive            Boolean            @default(true)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  subscriptions       TradingBotSubscription[]
+
+  @@map("subscription_plans")
+}
+
+model TradingBotSubscription {
+  id                    String             @id @default(uuid())
+  userId                String
+  planId                String
+  status                SubscriptionStatus @default(NO_SUBSCRIPTION)
+  startsAt              DateTime           @default(now())
+  expiresAt             DateTime
+  autoRenew             Boolean            @default(false)
+  paymentRef            String?
+  isRevoked             Boolean            @default(false)
+  revokedAt             DateTime?
+  revocationReason      String?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                  SubscriptionPlan   @relation(fields: [planId], references: [id])
+  payments              PaymentTransaction[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("trading_bot_subscriptions")
+}
+
+// ============================================================================
+// 7. STRUCTURED AUDIT LOGGING
+// ============================================================================
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String?
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  ipAddress String?
+  severity  String   @default("INFO")
+  createdAt DateTime @default(now())
+
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ============================================================================
+// 8. CUSTODIAL ALLOCATIONS, MANUAL PAYMENTS & TREASURY LEDGER (OPTION A)
+// ============================================================================
+
+enum CustodialAllocationStatus {
+  PENDING_PAYMENT_VERIFICATION
+  ACTIVE_CUSTODIAL_ALLOCATION
+  MATURED_AWAITING_PAYOUT
+  PAYMENT_DISPATCHED
+  PAYMENT_INDEPENDENTLY_VERIFIED
+  SETTLEMENT_COMPLETED
+  CANCELLED
+  REJECTED
+}
+
+model CustodialAllocation {
+  id                        String                     @id @default(uuid())
+  allocationId              String                     @unique
+  investorAddress           String
+  investorName              String
+  planId                    String                     // e.g. TIER_01 .. TIER_06
+  tierNumber                String                     // '01' .. '06'
+  displayName               String
+  principalINR              Decimal                    @db.Decimal(28, 2)
+  principalUSD              Decimal                    @db.Decimal(28, 2)
+  contractualSettlementINR  Decimal                    @db.Decimal(28, 2)
+  multiplierFactor          Decimal                    @db.Decimal(10, 4)
+  lockDurationMonths        Int
+  settlementPayoutMonth     Int
+  allocationPriceINR        String
+  allocatedTokensFormatted  String
+  allocatedTokensBaseUnits  Decimal                    @db.Decimal(78, 0) // Exact atomic 18-decimal units
+  status                    CustodialAllocationStatus  @default(PENDING_PAYMENT_VERIFICATION)
+  custodyModel              String                     @default("COMPANY_CONTROLLED_CUSTODY_OPTION_A")
+  custodyHoldingAddress     String
+  isInvestorTransferable    Boolean                    @default(false)
+  isInvestorWithdrawable    Boolean                    @default(false)
+  isCustodialAllocation     Boolean                    @default(true)
+  idempotencyKey            String?                    @unique
+  createdAt                 DateTime                   @default(now())
+  activatedAt               DateTime?
+  maturesAt                 DateTime?
+  payoutDueDate             DateTime?
+
+  paymentRecord             CustodialPaymentRecord?
+
+  @@index([investorAddress])
+  @@index([status])
+  @@index([planId])
+  @@map("custodial_allocations")
+}
+
+model CustodialPaymentRecord {
+  id                        String              @id @default(uuid())
+  allocationId              String              @unique
+  paymentReference          String
+  canonicalReferenceKey     String
+  amountPaid                Decimal             @db.Decimal(28, 2)
+  currency                  String              @default("INR")
+  paymentRail               String
+  verificationStatus        String              @default("PENDING") // PENDING, VERIFIED, REJECTED
+  submittedAt               DateTime            @default(now())
+  verifiedAt                DateTime?
+  verifyingAdmin            String?
+  adminNotes                String?
+  dispatchedAt              DateTime?
+  dispatchedBy              String?
+  collateralTxHash          String?
+  collateralReturnedAt      DateTime?
+
+  allocation                CustodialAllocation @relation(fields: [allocationId], references: [allocationId], onDelete: Cascade)
+
+  @@index([canonicalReferenceKey])
+  @@index([verificationStatus])
+  @@map("custodial_payment_records")
+}
+
+model PaymentReferenceRegistryEntry {
+  id                String    @id @default(uuid())
+  canonicalKey      String    @unique
+  normalizedRef     String
+  rawReference      String
+  paymentRail       String
+  environment       String    @default("BSC_TESTNET")
+  allocationOrInvId String
+  amountPaidINR     Decimal   @db.Decimal(28, 2)
+  registeredBy      String
+  registeredAt      DateTime  @default(now())
+  status            String    @default("ACTIVE")
+  correctionReason  String?
+  correctedBy       String?
+  correctedAt       DateTime?
+
+  @@index([canonicalKey])
+  @@index([normalizedRef])
+  @@map("payment_reference_registry")
+}
+
+model CustodialTreasurySnapshot {
+  id                                    String                      @id @default(uuid())
+  treasuryAddress                       String                      @unique
+  totalOnChainHoldingsBaseUnits         Decimal                     @db.Decimal(78, 0)
+  reservedCustodialAllocationsBaseUnits Decimal                     @db.Decimal(78, 0)
+  unrestrictedFreeBaseUnits             Decimal                     @db.Decimal(78, 0)
+  lastReconciledAt                      DateTime                    @default(now())
+  reconciledBlockNumber                 BigInt?
+  isSolvent                             Boolean                     @default(true)
+  updatedAt                             DateTime                    @updatedAt
+
+  movements                             CustodialTreasuryMovement[]
+
+  @@map("custodial_treasury_snapshots")
+}
+
+model CustodialTreasuryMovement {
+  id              String                    @id @default(uuid())
+  treasuryAddress String
+  movementType    String
+  amountBaseUnits Decimal                   @db.Decimal(78, 0)
+  balanceBefore   Decimal                   @db.Decimal(78, 0)
+  balanceAfter    Decimal                   @db.Decimal(78, 0)
+  referenceId     String?
+  idempotencyKey  String?                   @unique
+  purpose         String
+  authorizedBy    String
+  timestamp       DateTime                  @default(now())
+
+  treasury        CustodialTreasurySnapshot @relation(fields: [treasuryAddress], references: [treasuryAddress], onDelete: Cascade)
+
+  @@index([treasuryAddress])
+  @@index([movementType])
+  @@map("custodial_treasury_movements")
+}
+
+model CustodialLedgerAudit {
+  id           String               @id @default(uuid())
+  allocationId String?
+  actor        String
+  action       String
+  details      String
+  metadata     Json?
+  timestamp    DateTime             @default(now())
+
+  @@index([allocationId])
+  @@index([actor])
+  @@index([action])
+  @@index([timestamp])
+  @@map("custodial_ledger_audits")
+}
+
+// ============================================================================
+// 9. SCHEDULED REFERENCE PRICING CONFIGURATION & AUDITABILITY
+// ============================================================================
+
+model PricingScheduleConfig {
+  id                    String    @id @default("CURRENT_CONFIG")
+  scheduleName          String    @default("CONFIRMED_REFERENCE_SCHEDULE_V1")
+  startPricePaise       Int       @default(20) // ₹0.20 = 20 paise
+  incrementPaise        Int       @default(20) // ₹0.20 = 20 paise
+  maxPricePaise         Int       @default(3000) // ₹30.00 = 3,000 paise
+  intervalSeconds       Int       @default(18000) // 5 hours = 18,000s
+  totalIntervals        Int       @default(149)
+  totalHoursToCeiling   Int       @default(745)
+  isActivated           Boolean   @default(false)
+  activationTimestamp   DateTime?
+  configuredBy          String    @default("ADMIN_SYSTEM")
+  disclaimer            String    @default("Scheduled reference price is an internal benchmark, not a guaranteed exchange trading price.")
+  updatedAt             DateTime  @updatedAt
+  createdAt             DateTime  @default(now())
+
+  @@map("pricing_schedule_configs")
+}

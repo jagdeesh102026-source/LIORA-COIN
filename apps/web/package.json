@@ -7,19 +7,26 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
     "lucide-react": "^1.55.0",
-    "next": "16.4.0",
+    "next": "16.4.3",
+    "oxeniq-ecosystem": "file:../..",
+    "pg": "^8.23.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "viem": "^2.21.0"
+    "viem": "^2.21.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "prisma": "^7.10.1",
     "typescript": "^5.0.0"
   }
 }

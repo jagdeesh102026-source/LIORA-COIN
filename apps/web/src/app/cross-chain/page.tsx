@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import Image from 'next/image';
@@ -26,12 +26,12 @@ export default function CrossChainPage() {
             style={{
               width: 130,
               height: 130,
-              background: 'radial-gradient(circle, rgba(57,123,255,0.4) 0%, transparent 70%)',
+              background: 'radial-gradient(circle, rgba(217,170,74,0.45) 0%, transparent 70%)',
             }}
           />
           <Image
-            src="/assets/oxeniq-logo-512.png"
-            alt="OXENIQ Cross-Chain Architecture"
+            src="/assets/liora-logo-512.png"
+            alt="Liora Coin Cross-Chain Architecture"
             width={100}
             height={100}
             className="relative object-contain filter drop-shadow-md"
@@ -62,7 +62,7 @@ export default function CrossChainPage() {
             <span className="text-xs text-[var(--brand-accent)]">Direct Asset Movement</span>
           </div>
           <p className="text-xs text-secondary leading-relaxed">
-            Transfers OXENIQ directly between networks via LayerZero v2 Omnichain Fungible Token (OFT) standards. 
+            Transfers Liora Coin (LIORA) directly between networks via LayerZero v2 Omnichain Fungible Token (OFT) standards. 
             Tokens locked or burned on the source chain are minted on the target chain at exact 1:1 parity with zero AMM slippage.
           </p>
           <div className="pt-2 text-xs text-emerald-400 flex items-center gap-2">
@@ -79,7 +79,7 @@ export default function CrossChainPage() {
             <span className="text-xs text-cyan-400">DEX Routing Aggregation</span>
           </div>
           <p className="text-xs text-secondary leading-relaxed">
-            Executes multi-step decentralized trades: swapping OXENIQ on PancakeSwap (BSC), bridging the intermediate stable asset, 
+            Executes multi-step decentralized trades: swapping Liora Coin on PancakeSwap (BSC), bridging the intermediate stable asset, 
             and routing through SunSwap (TRON). Requires secondary liquidity reserves on both networks.
           </p>
           <div className="pt-2 text-xs text-secondary flex items-center gap-2">

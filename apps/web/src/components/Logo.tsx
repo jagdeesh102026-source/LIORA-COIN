@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { BRAND_CONFIG } from '@/config/brandConfig';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'hero';
@@ -32,20 +33,20 @@ export const Logo: React.FC<LogoProps> = ({
   const content = (
     <div className={`inline-flex items-center gap-3.5 group ${className}`}>
       <div className="relative flex items-center justify-center shrink-0">
-        {/* Glowing ambient halo behind official medallion */}
+        {/* Glowing ambient halo behind official Liora Coin medallion */}
         <div
-          className="absolute rounded-full filter blur-md opacity-40 group-hover:opacity-75 transition-opacity duration-300 pointer-events-none"
+          className="absolute rounded-full filter blur-md opacity-45 group-hover:opacity-80 transition-opacity duration-300 pointer-events-none"
           style={{
             width: dim.width * 1.15,
             height: dim.height * 1.15,
-            background: 'radial-gradient(circle, rgba(57,123,255,0.45) 0%, rgba(99,179,255,0) 70%)',
+            background: 'radial-gradient(circle, rgba(217,170,74,0.45) 0%, rgba(217,170,74,0) 70%)',
           }}
         />
 
-        {/* Official OXENIQ Logo Medallion */}
+        {/* Official Liora Coin Logo Medallion */}
         <Image
-          src="/assets/oxeniq-logo.png"
-          alt="OXENIQ Official Logo - Powering the Next Digital Era"
+          src={BRAND_CONFIG.assets.logo}
+          alt={`${BRAND_CONFIG.displayName} Official Logo - ${BRAND_CONFIG.tagline}`}
           width={dim.width}
           height={dim.height}
           priority={size === 'md' || size === 'hero' || size === 'lg'}
@@ -56,11 +57,11 @@ export const Logo: React.FC<LogoProps> = ({
       {showWordmark && (
         <div className="flex flex-col">
           <span className={`font-black tracking-wider text-metallic ${dim.text} leading-tight`}>
-            OXEN<span className="text-gradient-blue">IQ</span>
+            LIORA <span className="text-amber-300">COIN</span>
           </span>
           {showTagline && (
             <span className={`tracking-[0.18em] uppercase text-secondary font-medium -mt-0.5 ${dim.badge}`}>
-              Powering the Next Digital Era
+              {BRAND_CONFIG.tagline}
             </span>
           )}
         </div>
@@ -70,7 +71,7 @@ export const Logo: React.FC<LogoProps> = ({
 
   if (href) {
     return (
-      <Link href={href} className="inline-flex items-center focus:outline-none" aria-label="OXENIQ Official Brand Home">
+      <Link href={href} className="inline-flex items-center focus:outline-none" aria-label={`${BRAND_CONFIG.displayName} Official Brand Home`}>
         {content}
       </Link>
     );

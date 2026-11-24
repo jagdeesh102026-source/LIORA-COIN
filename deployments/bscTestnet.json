@@ -1,0 +1,21 @@
+{
+  "network": "bscTestnet",
+  "chainId": 97,
+  "deployedAt": "2026-10-25T17:00:10.437Z",
+  "deployer": "0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350",
+  "contracts": {
+    "OxeniqToken": {
+      "address": "0xdf4FdDC848ED10d0b341BBe907C47D4d691EC877",
+      "name": "OXENIQ",
+      "symbol": "OXENIQ",
+      "decimals": 18,
+      "initialSupply": "1000000000000000000000000000"
+    },
+    "AllocationManager": {
+      "address": "0x2ce58319f424D78d3EA4Eb0f4864521EAadE9296",
+      "ratio": "70:30",
+      "recipient70": "0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350",
+      "recipient30": "0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350"
+    }
+  }
+}

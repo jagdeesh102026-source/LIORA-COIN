@@ -1,21 +1,113 @@
-node_modules
-.next
-out
-build
-dist
-cache
-artifacts
-coverage
-typechain
-typechain-types
+# ==============================================================================
+# LIORA COIN — Comprehensive Production .gitignore Specification
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Credentials, Secrets & Environment Configurations
+# ------------------------------------------------------------------------------
+# All actual environment configuration files (root and subdirectories)
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-*.log
+.env.*
+*.env
+*.env.*
+!.env.example
+
+# Local credentials and test accounts
+.test_credentials.local
+*.credentials
+*.credentials.*
+credentials.json
+secrets.json
+
+# Blockchain wallet private keys, seed phrases & certificates
+*.key
+*.pem
+*.pkcs12
+*.pfx
+*.p12
+*.keystore
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+*.ppk
+*.cer
+*.crt
+
+# Cloud, VPS & SSH credentials
+.aws/
+.gcp/
+.azure/
+.ssh/
+known_hosts
+authorized_keys
+
+# ------------------------------------------------------------------------------
+# 2. Database Files & Local Persistent Storage
+# ------------------------------------------------------------------------------
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.dump
+*.sql.gz
+backups/
+data/*.db
+data/*.sqlite*
+
+# ------------------------------------------------------------------------------
+# 3. Dependencies & Package Managers
+# ------------------------------------------------------------------------------
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ------------------------------------------------------------------------------
+# 4. Build Outputs, Transpilation & Caches
+# ------------------------------------------------------------------------------
+.next/
+.next*/
+apps/web/.next/
+apps/web/.next*/
+out/
+build/
+dist/
+cache/
+artifacts/
+coverage/
+typechain/
+typechain-types/
+*.tsbuildinfo
+.turbo/
+.cache/
+
+# ------------------------------------------------------------------------------
+# 5. Local Tools, Binaries & Temporary Files
+# ------------------------------------------------------------------------------
+.tools/
+*.exe
+*.dll
+*.so
+*.dylib
+*.bin
+
+# Hardhat & OpenZeppelin local dev artifacts (keep bsc-testnet.json, ignore dev/unknown local)
+.openzeppelin/unknown-*.json
+
+# Operating System & IDE artifacts
+*.log
 .DS_Store
 Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace

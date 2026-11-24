@@ -8,6 +8,7 @@ export interface EcosystemComponent {
   chain: string;
   description: string;
   technicalDetails: string[];
+  contractAddress?: string;
 }
 
 export interface RoadmapMilestone {
@@ -28,6 +29,19 @@ export interface OpenDecisionItem {
   provisionalHandling: string;
 }
 
+export interface ChainNetworkConfig {
+  id: number;
+  name: string;
+  category: 'PRODUCTION' | 'TESTNET' | 'LOCAL_SIMULATION' | 'FUTURE_EXPANSION';
+  status: 'ACTIVE_TARGET' | 'TESTING_ONLY' | 'DEV_MOCK_ONLY' | 'DISABLED_FUTURE_PHASE';
+  isTestnet: boolean;
+  contractAddress: string | null;
+  allocationManagerAddress?: string | null;
+  explorerUrl: string;
+  rpcUrl: string;
+  notes?: string;
+}
+
 export interface TokenMetadata {
   name: string;
   symbol: string;
@@ -35,14 +49,9 @@ export interface TokenMetadata {
   tagline: string;
   initialSupply: string;
   targetChain: string;
-  supportedChains: {
-    id: number;
-    name: string;
-    isTestnet: boolean;
-    contractAddress: string | null;
-    explorerUrl: string;
-    rpcUrl: string;
-  }[];
+  canonicalMinPurchaseInr: number;
+  supportedChains: ChainNetworkConfig[];
+  futureChains: ChainNetworkConfig[];
   initialLiquidityBudget: string;
   allocationRatio: string;
 }

@@ -1,32 +1,54 @@
-﻿import { EcosystemComponent } from '../types';
+import { EcosystemComponent } from '../types';
+import {
+  BSC_TESTNET_TOKEN_ADDRESS,
+  BSC_TESTNET_ALLOCATION_MANAGER_ADDRESS,
+  BSC_TESTNET_SALE_ADDRESS,
+} from './tokenConfig';
 
 export const ECOSYSTEM_COMPONENTS: EcosystemComponent[] = [
   {
     id: "bep20-token",
     name: "OXENIQ BEP-20 Core Contract",
     category: "Token",
-    status: "In Development",
-    chain: "BNB Smart Chain",
+    status: "Live",
+    chain: "BSC Testnet (#97)",
+    contractAddress: BSC_TESTNET_TOKEN_ADDRESS,
     description: "Market-priced utility cryptocurrency contract conforming strictly to BEP-20 (ERC-20). Features Ownable2Step administration, ERC20Burnable supply reductions, and Pausable circuit breaker.",
     technicalDetails: [
-      "Standard 18 decimals high precision",
+      "Standard 18 decimals high precision with 1,000,000,000 fixed supply",
       "Zero fee-on-transfer to ensure 100% AMM & DEX compatibility",
-      "OpenZeppelin v5 verified library primitives",
-      "Deterministic deployment with zero hidden minting backdoors",
+      "OpenZeppelin v5 verified library primitives with Pausable circuit breaker",
+      "Deployed and verified on BNB Smart Chain Testnet (Chain ID 97)",
     ],
   },
   {
     id: "allocation-manager",
     name: "Allocation Manager (70:30 Split)",
     category: "Governance",
-    status: "In Development",
-    chain: "BNB Smart Chain",
+    status: "Live",
+    chain: "BSC Testnet (#97)",
+    contractAddress: BSC_TESTNET_ALLOCATION_MANAGER_ADDRESS,
     description: "Decoupled smart contract governing the 70:30 purchased-token allocation without polluting the base token transfer path.",
     technicalDetails: [
       "Exact integer math preventing truncation dust: share30 = amount - share70",
       "ReentrancyGuard protection on all external distribution calls",
       "Configurable recipient multi-sigs with zero-address verification",
-      "Transparent on-chain event logging (AllocationExecuted)",
+      "Deployed and verified on BNB Smart Chain Testnet (Chain ID 97)",
+    ],
+  },
+  {
+    id: "testnet-token-sale",
+    name: "Testnet Fixed-Price Token Sale",
+    category: "Token",
+    status: "Live",
+    chain: "BSC Testnet (#97)",
+    contractAddress: BSC_TESTNET_SALE_ADDRESS,
+    description: "Standalone fixed-price testnet dispenser facilitating developer and pipeline integration with test BNB (tBNB) at 1 tBNB = 10,000 OXENIQ.",
+    technicalDetails: [
+      "Fixed test rate: 1 tBNB = 10,000 OXENIQ (0.0001 tBNB per token)",
+      "Strict network restriction enforcing execution on Chain ID 97 only",
+      "Inventory-bound dispenser with Pausable emergency circuit breaker",
+      "Safe owner recovery of unsold testnet inventory and proceeds",
     ],
   },
   {

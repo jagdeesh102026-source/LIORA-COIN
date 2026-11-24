@@ -1,0 +1,274 @@
+﻿LIORA COIN â€” FINAL MANAGEMENT CLARIFICATION CHECKLIST
+Project: LIORA COIN â€” Pre-Launch Investment PlatformTarget launch: 4 December 2026Blockchain: BNB Smart ChainPurpose: Finalize all outstanding requirements before mainnet deployment and activation of real-money investments.
+Already Confirmed â€” No Response Required
+Initial launch will support LIORA only.
+Public website will offer pre-launch investment plans and is intended to accept real money.
+Total LIORA supply currently planned: 1 billion tokens.
+Allocation: 70% client-related allocation and 30% company reserve.
+Future platform expansion must support company-created coins and existing cryptocurrencies.
+Proportional allocation: When the approved LIORA price increases, fewer tokens are allocated for the same fixed investment or payout value.
+Existing investor token holdings must remain unaffected by proportional allocation.
+Management can modify investment plans after mainnet deployment, but changes apply only to new investors.
+Existing investors retain their originally agreed investment terms.
+Confirmed Investment Plans
+Tier
+Investment (USD / INR)
+Factor
+Token allocation value (USD / INR)
+Lock-in
+01
+$500 / â‚¹50,000
+2.5Ã—
+$1,250 / â‚¹1,25,000
+3 months
+02
+$1,000 / â‚¹1,00,000
+6Ã—
+$6,000 / â‚¹6,00,000
+3 months
+03
+$2,000 / â‚¹2,00,000
+5Ã—
+$10,000 / â‚¹10,00,000
+3 months
+04
+$3,000 / â‚¹3,00,000
+8Ã—
+$24,000 / â‚¹24,00,000
+9 months
+05
+$5,000 / â‚¹5,00,000
+6Ã—
+$30,000 / â‚¹30,00,000
+12 months
+06
+$10,000 / â‚¹10,00,000
+9Ã—
+$90,000 / â‚¹90,00,000
+12 months
+Tiers 02, 04 and 06 are marked as Recommended.
+SECTION A â€” Investment Plans and Investor Payments
+Q1. What exactly does the allocation factor represent?
+For example, when an investor invests â‚¹1,00,000 under Tier 02 (6Ã—), does the investor receive:
+A. LIORA tokens assigned an allocation value of â‚¹6,00,000, without guaranteed redemption value.
+B. A guaranteed payment of â‚¹6,00,000 in INR/USDT.
+C. LIORA tokens held as collateral against a separately defined cash payout.âœ…
+D. Another arrangement â€” please explain.
+Q2. What exactly is locked during the investment period?
+A. Allocated LIORA tokens.
+B. The investor's deposited funds.
+C. Both.âœ…
+D. Another arrangement.
+Q3. When does the lock-in period begin?
+A. When payment is confirmed.
+B. When tokens are allocated.âœ…
+C. A fixed company-defined date.
+Q4. When does the investor receive LIORA tokens?
+A. Immediately after investment.âœ…
+B. At the end of the lock-in period.
+C. Tokens remain in a smart contract until maturity.
+Q5. What happens when the lock-in period ends?
+Specify whether the investor receives LIORA tokens, USDT, INR, the original investment amount, a separate profit payment, or a combination.âœ…Investors only receive promised INR amount in the form of LIORA tokens,later the maturity period they withdraw/transfer tokens directly to their accounts/walletsDeposited investment = Allocated Tokens
+Q6. How are investor payouts funded?
+What verified source of funds covers any promised INR/USDT payment? What happens if the company's available funds are insufficient?
+âœ…TRADING PROFITS,BUSSINESS REVENUE,LIQUIDITY POOL FEES
+Q7. Are payouts made automatically or manually?
+A. Automatically through smart contracts.
+B. Manually by the company.âœ…
+C. Automatically when funded, with an authorized manual fallback.
+Q8. What happens if an investor wants to withdraw before maturity?
+Is early withdrawal prohibited, permitted with conditions, or subject to a refund policy?
+Withdrawal prohibitedâœ…
+Q9. If LIORA's market price rises and the collateral value exceeds the agreed amount, what happens to the excess tokens?
+Does the investor retain them, or are excess tokens released to the company under an explicitly disclosed agreement? How are price declines handled?
+Company retains excess: Only the tokens representing the agreed entitlement are distributed; excess remains with the company âœ…
+Q10. Are the USD and INR amounts fixed alternatives?
+For example, is Tier 01 always $500 or â‚¹50,000, or should INR amounts be calculated using the live USD/INR exchange rate?
+No live USD/INR exchange rates,Tier 01 always $500 or â‚¹50,000âœ…
+SECTION B â€” Token Pricing and Proportional Allocation
+Q11. What is LIORA's actual initial primary-sale price?
+Is it â‚¹0.20 per LIORA or another approved price?
+âœ…â‚¹0.20 per LIORA 
+Q12. Which price determines proportional token allocation?
+A. Company's scheduled reference price.
+B. Actual PancakeSwap market price.
+C. Another independently validated price source.
+For pre-launch Investors invest depending on the COMPANIES WEBSITE REFERENCE PRICEâœ…
+IN BNB Chain Investment-time price: Price at the moment investment is made
+Q13. Is the â‚¹0.20 increase every five hours, capped at â‚¹30, still required?
+If yes, is it strictly a displayed reference price or also intended as the company's primary-sale execution price?yesâœ…
+Q14. When is the allocation price finalized?
+A. When the investor selects the plan.âœ…
+B. When payment is confirmed.
+C. When the allocation transaction executes.
+Q15. Can management change pricing rules after mainnet deployment?
+If yes, which settings may change, who authorizes changes, and how much advance notice is required?
+Noâœ…
+Q16. What happens if the price changes during an investment transaction?
+Should the original quote remain valid for a limited period, or should the system recalculate before payment confirmation?
+ system should recalculate before payment confirmationâœ…
+SECTION C â€” Token Supply and Allocation
+Q17. Must LIORA's total supply remain permanently fixed at 1 billion?
+Should future minting be technically impossible, including through upgrades?
+âœ…Fix to 1 Billion
+Q18. How should the 70% client allocation and 30% company reserve be held?
+A. Separate on-chain treasury wallets.
+B. Separate smart contract vaults.
+C. Accounting-only allocation within the company wallet.âœ…
+Q19. Can management release tokens from the 30% reserve?
+If yes, under what conditions and with whose authorization?
+management can unlock it whenever they wish â€”it is management-controlled supply.âœ…30% token reserve, Releasing  tokens can increase circulating supply and create selling pressure, potentially affecting investor value. 
+Q20. Should the LIORA token itself be upgradeable?
+A. Upgradeable token and upgradeable business modules.
+B. Immutable token with upgradeable sale, investment and treasury modules.âœ…
+C. Another architecture.
+Q21. Should the token support transfer restrictions, emergency pausing or transaction fees?
+If yes, specify the intended rules and investor disclosures.
+NOâœ…
+SECTION D â€” Purchasing, Liquidity and Trading
+Q22. Where should customers purchase LIORA?
+A. Only through the company website.
+B. Through both the website and PancakeSwap.âœ…
+C. Through other approved trading interfaces.
+Q23. Is the requirement to allocate 100% of primary-sale USDT proceeds to LIORA/USDT liquidity final?
+If not, specify the approved allocation percentage and treasury treatment. YESâœ…, requirement to allocate 100% of primary-sale USDT proceeds to LIORA/USDT liquidity final
+Q24. What is the initial mainnet liquidity budget?
+Specify the amount of real USDT and LIORA to deposit.
+MIN 1000$ USDTâœ…
+Q25. Who will own and control liquidity-provider (LP) tokens?
+A. Single company wallet.âœ…
+B. Multisignature treasury.
+C. Liquidity-locking contract.
+Q26. Under what circumstances may the company remove liquidity?
+Specify authorization requirements, investor disclosures and any lock period.
+When the exchange is sold for an agreement to another party (if sold)âœ…
+Q27. Should LIORA be visible on Binance Wallet, Binance Exchange and other platforms?
+Clarify whether the requirement means wallet visibility, DEX trading, or an official centralized exchange listing.
+âœ…YES ,the requirement means wallet visibility, DEX trading, or an official centralized exchange listing, LIORA be visible on Binance Wallet, Binance Exchange and other platforms
+Q28. Does management still require all LIORA purchases and sales to happen exclusively through the company website?
+If yes, please confirm whether management accepts that a freely transferable token with public DEX liquidity generally cannot enforce this restriction across external interfaces.
+BOTH IN EXCHAGE & WEBSITEâœ…
+SECTION E â€” Smart Contract Administration and Flexibility
+Q29. Who will have permission to change investment plans, pricing, treasury addresses and other business parameters?
+Specify the authorized roles.
+Board: Controls major business and investment decisions. âœ…
+Q30. Who will control contract upgrades after mainnet deployment?
+A. One company administrator.âœ…
+B. Multiple administrators through a multisignature wallet.
+C. Another governance arrangement.
+Q31. Should sensitive changes require a waiting period or timelock?
+For example, should upgrades and treasury changes require advance notice and delayed execution?
+YES upgrades and treasury changes require advance notice and delayed executionâœ…
+Q32. Should management be able to add new investment plans without redeploying contracts?
+If yes, should there be limits on the number of plans and permitted parameter values?
+NO MORE INVESTMENT PLANS RATHER THAN THE PROPOSED ONEâœ…
+Q33. Should the company be able to pause investments independently of token transfers and withdrawals?
+Specify which operations must remain available during an emergency.
+Suspected fraud, exploit, or security breach.âœ…
+Insufficient verified funds to meet existing obligations.âœ…
+Liquidity crisis or material reserve shortfall.âœ…
+Regulatory or legal directive.âœ…
+Technical failure affecting investment calculations or fund handling.âœ…
+Inability to verify treasury balances or financial reporting.âœ…
+Material irregularity in the investment or reward calculation systemâœ…
+Q34. Should investor agreements be permanently versioned?
+Confirm that each investment must retain its accepted amount, factor, duration, allocation price, payout rules and withdrawal rights, even after management updates the plan catalogue.
+âœ…yes
+SECTION F â€” Payments, Wallets and Treasury
+Q35. Which payment methods must work at launch?
+A. USDT on BNB Smart Chain.
+B. INR through an approved payment provider.
+C. Both.âœ…
+Q36. Will users connect personal wallets or receive platform-managed wallets?
+A. Noncustodial wallets such as MetaMask.
+B. Company-custodied accounts.
+C. Both.âœ…
+Q37. Where will investor funds be held?
+Specify the custody structure, separation from company funds, and who can authorize transfers.
+Token purchase: Investors buy your token, and the payment becomes company revenue or project funds according to the sale agreement. âœ…
+Q38. How should payment failures, incorrect transfers and refunds be handled?
+Specify the responsible team and refund policy.
+Recommended operational safeguards
+For  BNB Chain token, I would additionally implement:
+A dedicated payment-monitoring dashboard.âœ…
+Automatic transaction-hash verification.âœ…
+Unique investor payment references.âœ…
+Automated detection of duplicate deposits.âœ…
+Separate refund wallet with multisig protection.âœ…
+Daily reconciliation of investor payments and token allocations.âœ…
+A public support channel for payment complaints.âœ…
+An auditable record of every refund.âœ…
+SECTION G â€” Website and Future Expansion
+Q39. What functionality must be available on the public website on November 23?
+Confirm the mandatory features: registration, wallet connection, investment-plan selection, real deposits, dashboards, transaction history, withdrawal requests, referrals and administration.
+All the above mentionedâœ…
+Q40. Is user registration and KYC required before investing?
+Specify identity-verification requirements and permitted countries.
+WE DON'T HAVE SEPARATE EXCHANGE INITIALLY DEALING WITH THE COIN SUPPLY SO NEED OF KYCâœ…
+PEOPLE WILL BUY FROM THEIR BINANCE AS THEIR CREDENTIALS ARE ALREADY WITH ITâœ…
+IF MANDATORY YES
+Full legal name.âœ…
+Date of birth.âœ…
+Nationality and country of residence.âœ…
+Residential address.
+Valid government-issued identification.âœ…
+Verified email address and mobile number.âœ…
+Identification photograph and selfie/liveness verification, where appropriate.âœ…
+Proof of residential address, where required.âœ…
+Designated BNB Smart Chain wallet address.âœ…
+Source of funds information, where required.âœ…
+PEP and sanctions declarations and screening.âœ…
+Acceptance of investor agreements and risk disclosuresâœ…
+Q41. Should management be able to add new company tokens through an admin dashboard?
+If yes, what approval and verification process is required?
+Allow management to add new tokens through the dashboard, but use a Makerâ€“Checkerâ€“Approver system:âœ…
+Maker: Founder / CEO submits the token.
+Checker: CFO, CTO and Compliance Officer independently verify it.
+Approver: Board-authorized personnel approve publication.
+Executor: Dashboard administrator activates the approved record.
+Blockchain controller: Multisig authorizes any privileged on-chain changes.
+This provides management flexibility without giving a single individual unrestricted control over the company's token ecosystem.
+Q42. Should existing cryptocurrencies such as BTC, ETH and BNB eventually be accepted as payment only, or also have their own investment plans?
+âœ…BOTH FOR PAYMENT & INVESTMENT PLANS
+Q43. Should the website support multiple blockchain networks in future?
+If yes, which networks should be prioritized after BNB Smart Chain?1. BNB CHAINâœ…
+2. TRONâœ…
+3.METAMASK(SOLANA)âœ…
+SECTION H â€” Legal, Security and Mainnet Approval
+Q44. Which legal entity operates LIORA, and which countries are permitted to invest?
+Q45. Has qualified legal counsel approved the real-money token offering, investment-plan structure, advertised allocation factors, custody and payout arrangements?
+If yes, provide the approval scope and any required restrictions.
+Q46. Has the final mainnet smart contract implementation received an independent security audit?
+If not, what is the approved audit and remediation plan?
+yesâœ…
+Q47. Who is authorized to approve the mainnet deployment?
+Specify the final technical, financial, security and management sign-offs.
+Company âœ…
+Q48. What is the company's incident-response plan?
+Who is responsible if a contract is exploited, an administrator key is compromised, a payout fails, or the website becomes unavailable?
+INSURANCEâœ…
+Q49. If critical legal, security or funding approvals are not complete by November 23, is management willing to launch an informational pre-launch website while keeping real-money investments disabled?
+YESâœ…
+Q50. What is the approved production launch budget?
+Include real liquidity, security audits, legal/compliance work, infrastructure, monitoring and operational reserves.âœ…
+Required Management Confirmation
+Please provide written confirmation of the final requirements, particularly:
+Investor rights and payout obligations.
+Lock-in and collateral-release rules.
+Pricing and proportional-allocation calculations.
+Token upgradeability and governance.
+Real-money payment and liquidity management.
+Legal and security approvals.
+Authorization to activate mainnet transactions.
+All material investment terms, administrative powers, restrictions and risks must be disclosed to investors before they commit funds.
+Final approval checklist ISâ€¦..âœ…
+ Investor rights and payout obligations approved
+ Lock-in and collateral-release rules approved
+ Pricing and proportional-allocation formulas verified
+Token upgradeability and governance permissions verified
+ Payment, treasury and liquidity controls implemented
+ Legal and regulatory approvals obtained
+ Independent smart-contract security audit completed
+ Investor disclosures published and acknowledged
+ Multisignature authorization tested
+ Written mainnet activation approval obtained

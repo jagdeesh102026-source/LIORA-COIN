@@ -1,66 +1,101 @@
-# OXENIQ — System Architecture Specification
+# Liora Coin (LIORA COIN, formerly OXENIQ) — System Architecture Specification
+
+> **Rebranding Note:** The frontend platform is rebranded to **Liora Coin (LIORA COIN / LIORA, proposed symbol)**. Deployed smart contracts on BSC Testnet (`OxeniqToken.sol`, `AllocationManager.sol`) remain immutable on-chain with legacy `OXENIQ` metadata until a dedicated `LIORA` contract is deployed.
 
 ## 1. Architectural Philosophy
 
-The OXENIQ ecosystem follows a **modular, decoupled Web3 architecture**. The primary objective is to guarantee institutional-grade security on BNB Smart Chain while remaining extensible for future TRON interoperability and decentralized exchange interactions.
+The Liora Coin ecosystem follows a **modular, decoupled Web3 architecture**. The primary design goal is to provide enterprise-grade reliability, mathematical precision, and security across both fiat e-commerce purchasing and decentralized on-chain trading on BNB Smart Chain.
 
 ```
-+-----------------------------------------------------------------------------------+
-|                                 CLIENT LAYER                                      |
-|   Next.js 15+ Frontend (App Router, Tailwind CSS, Lucide Icons, Mobile Responsive)|
-|   +-----------------------+ +-----------------------+ +-----------------------+   |
-|   |   Public Showcase     | |  Web3 Connectors      | |  DApp Modules         |   |
-|   |   - Hero & Brand      | |  - Wagmi / Viem       | |  - Balance Inspector  |   |
-|   |   - Ecosystem & Tech  | |  - Injected / AppKit  | |  - Swap Interface     |   |
-|   |   - Roadmap & Docs    | |  - Chain Guard (BSC)  | |  - Cross-Chain Bridge |   |
-|   +-----------------------+ +-----------------------+ +-----------------------+   |
-+-----------------------------------------------------------------------------------+
-                                         |
-                                (RPC Reads / User Tx)
-                                         v
-+-----------------------------------------------------------------------------------+
-|                            BLOCKCHAIN INFRASTRUCTURE                              |
-|                                                                                   |
-|  [ BNB Smart Chain (BEP-20) ]                   [ Future TRON Network (TRC-20) ]  |
-|  +---------------------------+                  +------------------------------+  |
-|  | OxeniqToken.sol           |                  | OxeniqTRC20.sol (Future)     |  |
-|  | - Standard BEP-20 / ERC-20|                  | - TRON TVM Compatible        |  |
-|  | - Ownable2Step Access     |                  | - Precision: 6 or 18 Decimals|  |
-|  | - Pausable Circuit Breaker|                  +------------------------------+  |
-|  +-------------+-------------+                                 ^                  |
-|                |                                               |                  |
-|  +-------------v-------------+                  +--------------+---------------+  |
-|  | AllocationManager.sol     |                  | Cross-Chain Adapter / OFT    |  |
-|  | - 70:30 Purchase Split    | <=============>  | - LayerZero / CCIP / Bridge  |  |
-|  | - Safe Integer Arithmetic |   (Messaging)    | - Secure Lock/Mint or Burn   |  |
-|  +---------------------------+                  +------------------------------+  |
-|                                                                                   |
-|  +---------------------------+                                                    |
-|  | Liquidity & Market Pool   |                                                    |
-|  | - PancakeSwap v2/v3 Pool  |                                                    |
-|  | - Initial $1,000 Reserve  |                                                    |
-|  +---------------------------+                                                    |
-+-----------------------------------------------------------------------------------+
++----------------------------------------------------------------------------------------------------+
+|                                         CLIENT TIER                                                |
+|   Next.js 16 (Turbopack, TypeScript, Tailwind CSS, Lucide Icons, Viem Web3 Connectors)             |
+|   +-----------------------+ +-----------------------+ +-----------------------+                    |
+|   | E-Commerce Checkout   | | Public Showcase       | | DEX Swap Terminal     |                    |
+|   | - INR Token Purchases | | - Brand Pillars       | | - PancakeSwap Router  |                    |
+|   | - Live Quote Display  | | - Tokenomics & Specs  | | - Slippage Protection |                    |
+|   | - $100 Min Guard      | | - Verified Contracts  | | - Honest Stage Banner |                    |
+|   +-----------------------+ +-----------------------+ +-----------------------+                    |
++----------------------------------------------------------------------------------------------------+
+                                                  │
+                                                  │ HTTPS / JSON API
+                                                  ▼
++----------------------------------------------------------------------------------------------------+
+|                                    BACKEND ORDER & COMMERCE TIER                                   |
+|   +--------------------------+  +--------------------------+  +--------------------------------+   |
+|   | Exchange Rate Oracle     |  | Order State Machine      |  | Payment Provider Adapter       |   |
+|   | - USD/INR Rate Polling   |  | & Idempotency Store      |  | Interface                      |   |
+|   | - 15-Minute Quote TTL    |  | - Replay Attack Defense  |  | - Provider-Agnostic Skeleton   |   |
+|   | - Stale Rate Fallback    |  | - Single Delivery Lock   |  | - Timing-Safe HMAC SHA-256     |   |
+|   +--------------------------+  +--------------------------+  +--------------------------------+   |
++----------------------------------------------------------------------------------------------------+
+                                                  │
+                                                  │ Internal Secure Worker Queue / KMS
+                                                  ▼
++----------------------------------------------------------------------------------------------------+
+|                                  BLOCKCHAIN & SETTLEMENT TIER                                      |
+|                                                                                                    |
+|  [ BNB Smart Chain Mainnet (Chain ID 56) ]                                                         |
+|  +-------------------------------------+      +--------------------------------------------------+ |
+|  | OxeniqToken.sol                     |      | AllocationManager.sol                            | |
+|  | - Total Supply: 1,000,000,000 Fixed |      | - 70:30 Purchase Split Controller                | |
+|  | - Zero Transfer Taxes (100% AMM)    | <──> | - Decoupled from Base BEP-20 Transfer Path       | |
+|  | - OpenZeppelin v5 (Ownable2Step)    |      | - ReentrancyGuard Protected                      | |
+|  | - Pausable Emergency Breaker        |      +--------------------------------------------------+ |
+|  +-------------------------------------+                                                           |
+|                     │                                                  │                           |
+|                     ▼                                                  ▼                           |
+|  +-------------------------------------+      +--------------------------------------------------+ |
+|  | PancakeSwap V2 Liquidity Pool       |      | Liquidity Reserve Vault                          | |
+|  | - Initial Target: $1,000,000 USD    |      | - Dedicated Gnosis Safe Multi-Sig                | |
+|  | - Pair: OXENIQ / USDT               |      | - Accumulates Reserve Tokens Prior to Pool Add   | |
+|  | - LP Tokens Locked 24+ Months       |      | - Governed by Multi-Signature Authorization      | |
+|  +-------------------------------------+      +--------------------------------------------------+ |
++----------------------------------------------------------------------------------------------------+
 ```
 
 ---
 
-## 2. Component Decoupling
+## 2. Component Decoupling & Security Boundaries
 
 ### 2.1 Base Token Contract (`OxeniqToken.sol`)
-- Standard BEP-20 (fully compliant with ERC-20 specifications on BNB Smart Chain).
-- Zero transfer taxes or fees-on-transfer in the base contract to maintain 100% compatibility with standard AMMs, bridges, and multisig vaults.
-- Security extensions:
-  - `Ownable2Step`: Prevents accidental loss of contract ownership by requiring the nominated owner to accept the transfer.
-  - `Pausable`: Emergency pause mechanism restricted to authorized admin for security incidents.
+- Standard BEP-20 implementation, fully compliant with ERC-20 on BNB Smart Chain.
+- **Zero Fees-on-Transfer:** Transfers execute with standard gas costs and zero balance deductions. This preserves compatibility with PancakeSwap AMM pools, vaults, and custodial wallets.
+- **Supply Invariant:** 1,000,000,000 tokens minted once at deployment. No `mint()` function exists in the contract ABI. Deflationary burning is enabled via OpenZeppelin `ERC20Burnable`.
+- **Administrative Safety:** `Ownable2Step` prevents accidental admin loss; `Pausable` enables an emergency circuit breaker.
 
-### 2.2 Purchase Allocation Module (`AllocationManager.sol`)
-- Kept completely separate from the transfer path of `OxeniqToken`.
-- Enforces the 70:30 split on purchase events using integer-safe arithmetic:
-  `firstShare = (quantity * 70) / 100`
-  `secondShare = quantity - firstShare`
-- Prevents precision loss and ensures zero tokens are trapped.
+### 2.2 E-Commerce Purchase Allocation (`AllocationManager.sol`)
+- Decoupled from `OxeniqToken.sol` to ensure ordinary transfers are never taxed.
+- Implements the 70:30 purchase allocation arithmetic with integer division:
+  - Buyer receives calculated purchase amount.
+  - Liquidity reserve receives its separately defined allocation.
+  - Conservation guarantees zero tokens lost to truncation.
 
-### 2.3 Cross-Chain Bridging Layer
-- The token contract does not contain custom, untested bridge logic.
-- Instead, it will use an audited bridge adapter (such as LayerZero Omnichain Fungible Token standard or Chainlink CCIP) once TRON requirements and bridge providers are finalized.
+### 2.3 Provider-Independent Payment Gateway Adapter
+- Abstraction decoupling e-commerce payment gateways (Cashfree, Razorpay, Decentro) from core business logic.
+- Implements authenticated HMAC-SHA256 webhook signature verification.
+- Enforces an idempotency key (`providerId:paymentId:orderId`) ensuring duplicate webhook notifications cannot cause duplicate token deliveries.
+
+### 2.4 Currency & Rate Oracle Service
+- Converts USD $100 minimum order requirement to INR: $\text{Min INR} = \lceil 100 \times \text{USD\_INR\_RATE} \rceil$.
+- Enforces a 15-minute quote validity TTL. If payment confirmation exceeds the TTL, quotes expire to prevent fiat volatility exposure.
+- Enforces a 60-minute staleness cutoff, reverting to fail-safe mode if the rate oracle is unavailable.
+
+---
+
+## 3. Order Lifecycle State Machine
+
+```
+[CREATED] ──> [QUOTED] ──> [PAYMENT_PENDING] ──> [PAYMENT_VERIFIED] ──> [FULFILLMENT_PENDING] ──> [FULFILLED]
+                                 │                       │                       │
+                                 ├──> [EXPIRED]          └──> [REFUNDED]         └──> [FULFILLMENT_FAILED]
+                                 └──> [CANCELLED]                                              │
+                                                                                               └──> [MANUAL_REVIEW]
+```
+
+---
+
+## 4. Postponed Features Guardrail
+
+- **Borrowing & Lending Feature:** Explicitly postponed. No lending pools, borrowing contracts, collateral vaults, or liquidation routines exist in the repository.
+- **TRON Cross-Chain Bridge:** Deferred to future phases once TVM specifications are finalized.

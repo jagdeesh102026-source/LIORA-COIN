@@ -1,0 +1,14 @@
+{
+  "network": "bscTestnet",
+  "chainId": 97,
+  "contractName": "LioraToken",
+  "address": "0xeD155E37D0a400E63202cE031Fc1C984B18E7999",
+  "deployer": "0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350",
+  "txHash": "0xb89905c9475d4be265ed13065b98ee8433ec2c0cb5243124dc2063a561da7d9f",
+  "blockNumber": 143062788,
+  "deployedAt": "2026-11-16T12:14:51.994Z",
+  "name": "LIORA COIN",
+  "symbol": "LIORA",
+  "decimals": 18,
+  "initialSupply": "1000000000000000000000000000"
+}

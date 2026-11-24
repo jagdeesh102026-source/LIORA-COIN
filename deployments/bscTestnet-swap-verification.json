@@ -1,0 +1,24 @@
+{
+  "network": "bscTestnet",
+  "chainId": 97,
+  "pairAddress": "0x64beE3847a766D35E6611985F3c3e51C78Af5D2c",
+  "swap1": {
+    "direction": "LIORA -> USDT",
+    "amountIn": "10.0",
+    "expectedOut": "0.023074079633226637",
+    "txHash": "0x40f7a98ac32fe4ab7ad5ce7a55b81e47945aee1c682da1f8c82417a7a87ad315",
+    "blockNumber": 143063078
+  },
+  "swap2": {
+    "direction": "USDT -> LIORA",
+    "amountIn": "1.0",
+    "expectedOut": "430.81493470654693671",
+    "txHash": "0x6b39b1f4484cc76fcbf1a8b7a78e495422bec4b5e224691de276d52b24993a2f",
+    "blockNumber": 143063092
+  },
+  "finalReserves": {
+    "liora": "215829.18506529345306329",
+    "usdt": "500.976925920366773363"
+  },
+  "verifiedAt": "2026-11-16T12:17:08.747Z"
+}

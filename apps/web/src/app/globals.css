@@ -378,3 +378,162 @@ html, body {
   max-width: 100vw;
   overflow-x: hidden;
 }
+
+/* Dedicated Currency & Form Input Utilities */
+.currency-input-container {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
+  padding: 0.5rem 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.currency-input-container:focus-within {
+  border-color: var(--brand-accent);
+  box-shadow: 0 0 0 1px var(--brand-accent);
+}
+
+.currency-symbol {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-right: 0.75rem;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.currency-input-field {
+  flex: 1 1 0%;
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  padding: 0.25rem 0;
+}
+
+.currency-input-field:focus {
+  outline: none;
+}
+
+.currency-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.25rem;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  user-select: none;
+  flex-shrink: 0;
+  margin-left: 0.75rem;
+}
+
+/* ==========================================================================
+   Comprehensive Modal Dialog & Overlay Utilities
+   Fixes transparency, stacking context, centering & responsive max-width
+   ========================================================================== */
+.modal-overlay,
+.modal-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  background-color: rgba(3, 7, 18, 0.85) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1rem !important;
+  overflow-y: auto !important;
+}
+
+.modal-dialog,
+.modal-card {
+  position: relative !important;
+  width: 100% !important;
+  max-width: 620px !important;
+  background: #0E1626 !important;
+  background: linear-gradient(180deg, #131E33 0%, #0A111F 100%) !important;
+  border: 1px solid var(--border-prominent) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(99, 179, 255, 0.15) !important;
+  padding: 1.75rem 2rem !important;
+  max-height: calc(100vh - 2.5rem) !important;
+  overflow-y: auto !important;
+  color: var(--text-primary) !important;
+}
+
+/* Fallback Tailwind-like classes for any component modals across the site */
+.bg-black\/80,
+.bg-black\/85 {
+  background-color: rgba(3, 7, 18, 0.85) !important;
+}
+
+.backdrop-blur-sm {
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
+
+.backdrop-blur-md {
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+.max-w-lg {
+  max-width: 620px !important;
+}
+
+.max-w-xl {
+  max-width: 650px !important;
+}
+
+.rounded-3xl {
+  border-radius: 1.5rem !important;
+}
+
+.rounded-2xl {
+  border-radius: 1rem !important;
+}
+
+.rounded-xl {
+  border-radius: 0.75rem !important;
+}
+
+.z-50 {
+  z-index: 9999 !important;
+}
+
+.bg-\[\#0F172A\] {
+  background-color: #0F172A !important;
+}
+
+.bg-\[\#101827\] {
+  background-color: #101827 !important;
+}
+
+.bg-\[\#0A111F\] {
+  background-color: #0A111F !important;
+}
+
+.bg-slate-900 {
+  background-color: #0A111F !important;
+}
+
+.bg-slate-800 {
+  background-color: #15202E !important;
+}
+
+.border-slate-700 {
+  border-color: #1E2B3E !important;
+}
+
+.border-slate-800 {
+  border-color: #15202E !important;
+}
+
+

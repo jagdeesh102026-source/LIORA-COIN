@@ -18,11 +18,11 @@ export const ROADMAP_DATA: RoadmapMilestone[] = [
     id: "phase-2",
     quarter: "Phase 2 - Complete",
     title: "Visual Design System & Official Brand Identity",
-    description: "Launch public-facing decentralized portal with obsidian, metallic blue, and silver design tokens incorporating the official OXENIQ emblem.",
+    description: "Launch public-facing decentralized portal with obsidian, gold, and metallic design tokens incorporating the official Liora Coin emblem.",
     status: "Completed",
     deliverables: [
       "Responsive Web3 application built on Next.js 16 and TypeScript",
-      "Official OXENIQ medallion integration across header, hero, and branding",
+      "Official Liora Coin medallion integration across header, hero, and branding",
       "Interactive DEX swap interface with verified liquidity guards",
       "Cross-chain transfer architecture explorer for BSC and TRON",
     ],
@@ -47,7 +47,7 @@ export const ROADMAP_DATA: RoadmapMilestone[] = [
     description: "Deploy initial $1,000 liquidity pool on PancakeSwap, lock LP tokens in certified locker, and activate decentralized spot trading.",
     status: "Planned",
     deliverables: [
-      "PancakeSwap trading pair deployment (OXENIQ/USDT)",
+      "PancakeSwap trading pair deployment (LIORA/USDT)",
       "Safe pool creation with slippage-protected initial ratio",
       "Automated LP token locking with public verifiable receipt",
       "Real-time DEX pool reserve tracking on portal",

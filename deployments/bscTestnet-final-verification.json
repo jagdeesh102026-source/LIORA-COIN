@@ -1,0 +1,129 @@
+{
+  "network": "bscTestnet",
+  "chainId": 97,
+  "deployerAddress": "0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350",
+  "receipts": {
+    "lioraDeploy": {
+      "hash": "0xb89905c9475d4be265ed13065b98ee8433ec2c0cb5243124dc2063a561da7d9f",
+      "status": 1,
+      "blockNumber": 143062788,
+      "timestamp": 1794831290,
+      "date": "2026-11-16T12:14:50.000Z",
+      "gasUsed": "813455",
+      "effectiveGasPriceGwei": "0.1",
+      "from": "0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350",
+      "to": null,
+      "contractAddress": "0xeD155E37D0a400E63202cE031Fc1C984B18E7999"
+    },
+    "usdtDeploy": {
+      "hash": "0xc6d6da6b1564f6dc311469a660c2f83880e3d25dc8733fd3e3e079499e92c13e",
+      "status": 1,
+      "blockNumber": 143062853,
+      "timestamp": 1794831320,
+      "date": "2026-11-16T12:15:20.000Z",
+      "gasUsed": "774906",
+      "effectiveGasPriceGwei": "0.1",
+      "from": "0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350",
+      "to": null,
+      "contractAddress": "0x0b419a33e8a6448547906DCB191b037Db5ac926e"
+    },
+    "poolProvision": {
+      "hash": "0x33cc7b5b45463bf4ff8d4d119f879762d6a46e741e0e6c01d91f88d2abbd6cc1",
+      "status": 1,
+      "blockNumber": 143062946,
+      "timestamp": 1794831361,
+      "date": "2026-11-16T12:16:01.000Z",
+      "gasUsed": "2196038",
+      "effectiveGasPriceGwei": "1.0",
+      "from": "0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350",
+      "to": "0xD99D1c33F9fC3444f8101754aBC46c52416550D1",
+      "contractAddress": null
+    },
+    "swap1": {
+      "hash": "0x40f7a98ac32fe4ab7ad5ce7a55b81e47945aee1c682da1f8c82417a7a87ad315",
+      "status": 1,
+      "blockNumber": 143063078,
+      "timestamp": 1794831421,
+      "date": "2026-11-16T12:17:01.000Z",
+      "gasUsed": "135312",
+      "effectiveGasPriceGwei": "0.1",
+      "from": "0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350",
+      "to": "0xD99D1c33F9fC3444f8101754aBC46c52416550D1",
+      "contractAddress": null
+    },
+    "swap2": {
+      "hash": "0x6b39b1f4484cc76fcbf1a8b7a78e495422bec4b5e224691de276d52b24993a2f",
+      "status": 1,
+      "blockNumber": 143063092,
+      "timestamp": 1794831428,
+      "date": "2026-11-16T12:17:08.000Z",
+      "gasUsed": "101011",
+      "effectiveGasPriceGwei": "0.1",
+      "from": "0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350",
+      "to": "0xD99D1c33F9fC3444f8101754aBC46c52416550D1",
+      "contractAddress": null
+    }
+  },
+  "lioraMeta": {
+    "address": "0xeD155E37D0a400E63202cE031Fc1C984B18E7999",
+    "name": "LIORA COIN",
+    "symbol": "LIORA",
+    "decimals": "18",
+    "totalSupply": "1000000000000000000000000000",
+    "owner": "0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350",
+    "paused": false
+  },
+  "usdtMeta": {
+    "address": "0x0b419a33e8a6448547906DCB191b037Db5ac926e",
+    "name": "Mock Tether USD (Testnet Sandbox)",
+    "symbol": "mUSDT",
+    "decimals": "18",
+    "totalSupply": "1000000000000000000000000",
+    "owner": "0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350"
+  },
+  "factoryPairAddress": "0x64beE3847a766D35E6611985F3c3e51C78Af5D2c",
+  "isFactoryPairMatch": true,
+  "poolState": {
+    "pairAddress": "0x64beE3847a766D35E6611985F3c3e51C78Af5D2c",
+    "reserveLiora": "215829185065293453063290",
+    "reserveUsdt": "500976925920366773363",
+    "formattedLiora": "215829.18506529345306329",
+    "formattedUsdt": "500.976925920366773363",
+    "lpTotalSupply": "10398317171542710737376",
+    "deployerLpBal": "10398317171542710736376",
+    "lpOwnershipPercent": "100.000000"
+  },
+  "swap1Event": {
+    "amount0In": "0",
+    "amount1In": "10000000000000000000",
+    "amount0Out": "23074079633226637",
+    "amount1Out": "0",
+    "to": "0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350"
+  },
+  "sync1Event": {
+    "reserve0": "499976925920366773363",
+    "reserve1": "216260000000000000000000"
+  },
+  "swap2Event": {
+    "amount0In": "1000000000000000000",
+    "amount1In": "0",
+    "amount0Out": "0",
+    "amount1Out": "430814934706546936710",
+    "to": "0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350"
+  },
+  "sync2Event": {
+    "reserve0": "500976925920366773363",
+    "reserve1": "215829185065293453063290"
+  },
+  "deployerBalances": {
+    "liora": "999784170814934706546936710",
+    "usdt": "999499023074079633226637",
+    "formattedLiora": "999784170.81493470654693671",
+    "formattedUsdt": "999499.023074079633226637"
+  },
+  "allowances": {
+    "lioraRouter": "0",
+    "usdtRouter": "0"
+  },
+  "verifiedAt": "2026-11-16T12:26:06.705Z"
+}

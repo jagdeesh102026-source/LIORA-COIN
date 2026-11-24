@@ -1,6 +1,7 @@
-﻿import React from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { Logo } from './Logo';
+import { PREVIEW_CONFIG } from '../config/previewConfig';
 
 export const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
@@ -13,7 +14,7 @@ export const Footer: React.FC = () => {
           <div className="md:col-span-2 space-y-4">
             <Logo size="md" showTagline={true} />
             <p className="text-sm text-secondary max-w-md leading-relaxed">
-              A high-security, market-priced utility token ecosystem engineered for BNB Smart Chain (BEP-20) 
+              A high-security, market-priced utility token ecosystem engineered for BNB Smart Chain (BEP-20)
               with verified mathematical token allocation and cross-chain expansion architecture.
             </p>
             <div className="flex items-center gap-2 text-xs text-muted">
@@ -26,6 +27,10 @@ export const Footer: React.FC = () => {
           <div>
             <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Ecosystem</h4>
             <ul className="space-y-2 text-sm">
+              {!PREVIEW_CONFIG.hideTradingBot && (
+                <li><Link href="/trading-bot" className="hover:text-white transition-colors text-amber-300/90 font-medium">Trading Bot (ALGOX)</Link></li>
+              )}
+              <li><Link href="/buy" className="hover:text-white transition-colors">Token Purchases (INR)</Link></li>
               <li><Link href="/ecosystem" className="hover:text-white transition-colors">Components</Link></li>
               <li><Link href="/token" className="hover:text-white transition-colors">Tokenomics</Link></li>
               <li><Link href="/swap" className="hover:text-white transition-colors">DEX Swap Terminal</Link></li>
@@ -48,12 +53,12 @@ export const Footer: React.FC = () => {
         {/* Legal Risk Disclosure & Copyright */}
         <div className="pt-8 space-y-4 text-xs text-muted">
           <p className="leading-relaxed">
-            <strong>Disclosures:</strong> OXENIQ is a market-priced digital utility token. It is not a fiat-pegged stablecoin, 
-            nor does it represent guaranteed monetary returns or equity. Token allocation, liquidity reserves, 
-            and cross-chain mechanisms operate strictly via verified smart contract interfaces.
+            <strong>Disclosures:</strong> Liora Coin (proposed symbol: LIORA, pending on-chain contract confirmation) is a market-priced digital utility token platform. It is not a fiat-pegged stablecoin,
+            nor does it represent guaranteed monetary returns or equity. Token allocation, liquidity reserves,
+            and cross-chain mechanisms operate via verified smart contract interfaces (including confirmed LIORA UUPS proxy contracts on BNB Smart Chain).
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-[var(--border-subtle)] text-[11px]">
-            <p>&copy; {currentYear} OXENIQ Protocol. All rights reserved.</p>
+            <p>&copy; {currentYear} Liora Coin Protocol. All rights reserved.</p>
             <p>Powering the Next Digital Era</p>
           </div>
         </div>

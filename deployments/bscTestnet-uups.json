@@ -1,0 +1,27 @@
+{
+  "network": "bscTestnet",
+  "chainId": 97,
+  "deployedAt": "2026-11-23T19:44:46.225Z",
+  "deployer": "0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350",
+  "architecture": "UUPS_UPGRADEABLE_PROXY_ERC1967",
+  "contracts": {
+    "proxyAddress": "0xC0aecDF4747C61AAbA1963bc90Ca9Fa16EDF16F9",
+    "implementationV1": "0xCda9930c1b932fD6CbD23c373aCB6f2f8A5bBcbD",
+    "timelockAddress": "0xDa79b818566fcE9D8123817dc291f4E0DE626A27",
+    "reserveVaultAddress": "0x1E10a2bFcA618Ed3EFEf732f4352A774586FC320"
+  },
+  "governance": {
+    "operatingTreasuryAddress": "0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350",
+    "reserveGovernanceAddress": "0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350",
+    "safeMultisigAddress": "0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350",
+    "minDelaySeconds": 172800
+  },
+  "token": {
+    "name": "LIORA",
+    "symbol": "LIORA",
+    "decimals": 18,
+    "totalSupply": "100000000000000000000000000000",
+    "treasuryBalance": "1000000000000000000000000000",
+    "reserveBalance": "99000000000000000000000000000"
+  }
+}

@@ -1,10 +1,11 @@
-# OXENIQ — Visual Design System & Brand Guidelines
+# Liora Coin (LIORA COIN) — Visual Design System & Brand Guidelines
 
 ## 1. Visual Identity & Brand Direction
 
-- **Brand Name**: OXENIQ
+- **Brand Name**: LIORA COIN (`Liora Coin`)
 - **Official Tagline**: *"POWERING THE NEXT DIGITAL ERA"*
-- **Aesthetic**: Futuristic, premium technological, metallic blue, deep obsidian, clean structure, high-contrast typography.
+- **Official Logo Assets**: `/assets/liora-logo-original.png`, `/assets/liora-logo.png`, `/assets/liora-logo-512.png`, `/assets/liora-logo-128.png`, `/favicon.ico`, `/favicon.png`, `/apple-touch-icon.png`
+- **Aesthetic**: Futuristic, premium technological, warm gold emblem accents, metallic blue, deep obsidian, clean structure, high-contrast typography.
 
 ---
 

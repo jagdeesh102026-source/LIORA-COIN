@@ -1,4 +1,4 @@
-# OXENIQ — Cross-Chain Architecture & Interoperability Plan
+# Liora Coin (LIORA COIN) — Cross-Chain Architecture & Interoperability Plan
 
 ## 1. Objective
 Establish secure, verifiable interoperability between **BNB Smart Chain** (initial chain) and **TRON** (future expansion), with modular support for additional EVM and non-EVM networks.

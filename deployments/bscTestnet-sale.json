@@ -1,0 +1,11 @@
+{
+  "network": "bscTestnet",
+  "chainId": 97,
+  "deployedAt": "2026-10-25T20:37:20.949Z",
+  "deployer": "0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350",
+  "tokenAddress": "0xdf4FdDC848ED10d0b341BBe907C47D4d691EC877",
+  "saleContractAddress": "0x48c25fb4027CDeCB68bf616A4717e5692AbfbDE8",
+  "rate": "1 tBNB = 10,000 OXENIQ",
+  "tokensPerBnb": 10000,
+  "txHash": "0xac34dede27d0963997fec04190aef97448126bc5260751fb20dd9ffd244262d1"
+}

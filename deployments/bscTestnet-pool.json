@@ -1,0 +1,15 @@
+{
+  "network": "bscTestnet",
+  "chainId": 97,
+  "pairAddress": "0x64beE3847a766D35E6611985F3c3e51C78Af5D2c",
+  "routerAddress": "0xD99D1c33F9fC3444f8101754aBC46c52416550D1",
+  "factoryAddress": "0x6725F303b657a9451d8BA641348b6761A6CC7a17",
+  "tokenA": "0xeD155E37D0a400E63202cE031Fc1C984B18E7999",
+  "tokenB": "0x0b419a33e8a6448547906DCB191b037Db5ac926e",
+  "initialLioraReserve": "216250.0",
+  "initialUsdtReserve": "500.0",
+  "txHash": "0x33cc7b5b45463bf4ff8d4d119f879762d6a46e741e0e6c01d91f88d2abbd6cc1",
+  "blockNumber": 143062946,
+  "lpRecipient": "0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350",
+  "createdAt": "2026-11-16T12:16:02.794Z"
+}

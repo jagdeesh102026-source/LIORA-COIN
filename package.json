@@ -4,15 +4,25 @@
   "description": "OXENIQ Web3 Token Ecosystem - BNB Smart Chain BEP-20 contracts & test suite",
   "private": true,
   "scripts": {
+    "dev": "npm --prefix apps/web run dev",
     "compile": "hardhat compile",
     "test": "hardhat test",
     "test:coverage": "hardhat coverage",
     "deploy:local": "hardhat run scripts/deploy.js --network localhost",
-    "deploy:bscTestnet": "hardhat run scripts/deploy.js --network bscTestnet"
+    "deploy:bscTestnet": "hardhat run scripts/deploy.js --network bscTestnet",
+    "build:web": "npm --prefix apps/web run build"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@openzeppelin/contracts": "^5.0.2",
+    "@openzeppelin/contracts-upgradeable": "^5.6.1",
+    "@openzeppelin/hardhat-upgrades": "^3.9.1",
+    "dotenv": "^18.0.9",
     "hardhat": "^2.22.0"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "pg": "^8.23.1"
   }
 }

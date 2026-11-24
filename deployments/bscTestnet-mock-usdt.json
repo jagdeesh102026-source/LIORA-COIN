@@ -1,0 +1,15 @@
+{
+  "network": "bscTestnet",
+  "chainId": 97,
+  "contractName": "MockUSDT",
+  "address": "0x0b419a33e8a6448547906DCB191b037Db5ac926e",
+  "deployer": "0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350",
+  "txHash": "0xc6d6da6b1564f6dc311469a660c2f83880e3d25dc8733fd3e3e079499e92c13e",
+  "blockNumber": 143062853,
+  "deployedAt": "2026-11-16T12:15:21.185Z",
+  "name": "Mock Tether USD (Testnet Sandbox)",
+  "symbol": "mUSDT",
+  "decimals": 18,
+  "initialSupply": "1000000000000000000000000",
+  "disclaimer": "STRICTLY FOR BSC TESTNET SANDBOX TESTING. ZERO REAL MONETARY VALUE."
+}
