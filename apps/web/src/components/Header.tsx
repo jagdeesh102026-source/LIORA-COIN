@@ -40,8 +40,8 @@ export const Header: React.FC = () => {
     setMounted(true);
   }, []);
 
-  const { isConnected, address, chainName, isSupportedChain, switchToBscTestnet, disconnect } = useWeb3Wallet();
-  const { userBalance, isTestnet } = useOxeniqContract();
+  const { isConnected, address, chainName, isSupportedChain, isBscMainnet, isBscTestnet, switchToBscTestnet, switchToBscMainnet, disconnect } = useWeb3Wallet();
+  const { userBalance, isTestnet, isMainnet } = useOxeniqContract();
   const { lioraBalance, usdtBalance } = useTestnetBalances();
   const { activeUser, logout } = useDemoStore();
 
@@ -227,24 +227,37 @@ export const Header: React.FC = () => {
           {/* Connect Wallet / Connected State - ALWAYS VISIBLE ON ALL SCREENS */}
           {isWalletConnected ? (
             <div className="flex items-center gap-1.5 sm:gap-2">
-              {/* Live Testnet Token Balances */}
+              {/* Live Token Balances */}
               <div className="hidden lg:flex items-center gap-1.5">
-                <div
-                  className="px-2.5 py-1.5 text-xs rounded-xl bg-blue-500/10 border border-blue-500/20 text-white font-semibold flex items-center gap-1.5"
-                  title="Live BSC Testnet LIORA Token Balance"
-                >
-                  <img src="/assets/liora-logo-128.png" alt="LIORA" className="w-3.5 h-3.5 rounded-full object-contain" />
-                  <span className="text-white font-bold font-mono">{lioraBalance}</span>
-                  <span className="text-[10px] text-blue-300">LIORA</span>
-                </div>
-                <div
-                  className="px-2.5 py-1.5 text-xs rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-white font-semibold flex items-center gap-1.5"
-                  title="Live BSC Testnet Mock USDT Balance"
-                >
-                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                  <span className="text-white font-bold font-mono">{usdtBalance}</span>
-                  <span className="text-[10px] text-emerald-300">USDT</span>
-                </div>
+                {isBscMainnet ? (
+                  <div
+                    className="px-2.5 py-1.5 text-xs rounded-xl bg-amber-500/10 border border-amber-500/20 text-white font-semibold flex items-center gap-1.5"
+                    title="Live BSC Mainnet LIORA Token Balance"
+                  >
+                    <img src="/assets/liora-logo-128.png" alt="LIORA" className="w-3.5 h-3.5 rounded-full object-contain" />
+                    <span className="text-white font-bold font-mono">{userBalance ?? '0.00'}</span>
+                    <span className="text-[10px] text-amber-300">LIORA (Mainnet)</span>
+                  </div>
+                ) : (
+                  <>
+                    <div
+                      className="px-2.5 py-1.5 text-xs rounded-xl bg-blue-500/10 border border-blue-500/20 text-white font-semibold flex items-center gap-1.5"
+                      title="Live BSC Testnet LIORA Token Balance"
+                    >
+                      <img src="/assets/liora-logo-128.png" alt="LIORA" className="w-3.5 h-3.5 rounded-full object-contain" />
+                      <span className="text-white font-bold font-mono">{lioraBalance}</span>
+                      <span className="text-[10px] text-blue-300">LIORA (Testnet)</span>
+                    </div>
+                    <div
+                      className="px-2.5 py-1.5 text-xs rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-white font-semibold flex items-center gap-1.5"
+                      title="Live BSC Testnet Mock USDT Balance"
+                    >
+                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                      <span className="text-white font-bold font-mono">{usdtBalance}</span>
+                      <span className="text-[10px] text-emerald-300">mUSDT</span>
+                    </div>
+                  </>
+                )}
               </div>
               <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-[var(--border-prominent)] bg-[var(--bg-elevated)]">
                 <button

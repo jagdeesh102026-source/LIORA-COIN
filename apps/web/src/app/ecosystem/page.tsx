@@ -37,27 +37,27 @@ export default function EcosystemPage() {
         </p>
       </div>
 
-      {/* Live BSC Testnet Banner */}
-      <div className="p-4 rounded-xl bg-blue-950/20 border border-blue-500/30 text-xs text-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* Live BSC Mainnet Banner */}
+      <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/30 text-xs text-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
         <div className="flex items-center gap-2.5">
           <span className="relative flex h-2.5 w-2.5 shrink-0">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
           </span>
           <div>
-            <strong className="text-white">BSC Testnet Live Deployment Verified (Chain ID 97)</strong>
-            <p className="text-[11px] text-blue-200/80 leading-relaxed">
-              Core protocol contracts marked with <span className="text-emerald-400 font-semibold">Live</span> are actively deployed on BNB Smart Chain Testnet. Explorer verification is available on BscScan Testnet.
+            <strong className="text-white">BNB Smart Chain Mainnet (Chain ID 56) Deployed & Verified</strong>
+            <p className="text-[11px] text-emerald-200/80 leading-relaxed">
+              Official LIORA smart contracts are verified on BSC Mainnet. On-chain transparency is available via BscScan Mainnet explorer.
             </p>
           </div>
         </div>
         <a
-          href="https://testnet.bscscan.com"
+          href="https://bscscan.com/token/0xE7B7fAd9EFDE37b3c9d47216044ECed6f7fd630A"
           target="_blank"
           rel="noreferrer"
           className="btn-metallic px-3 py-1.5 rounded-lg text-xs font-semibold text-white inline-flex items-center gap-1.5 shrink-0"
         >
-          <span>BscScan Testnet</span>
+          <span>BscScan Mainnet</span>
           <ExternalLink className="w-3.5 h-3.5" />
         </a>
       </div>

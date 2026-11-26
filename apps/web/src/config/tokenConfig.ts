@@ -18,7 +18,16 @@ export const BSC_TESTNET_LEGACY_PANCAKESWAP_PAIR_ADDRESS = "0x64beE3847a766D35E6
 export const BSC_TESTNET_PANCAKESWAP_ROUTER_ADDRESS = "0xD99D1c33F9fC3444f8101754aBC46c52416550D1";
 export const BSC_TESTNET_PANCAKESWAP_FACTORY_ADDRESS = "0x6725F303b657a9451d8BA641348b6761A6CC7a17";
 
-export const BSC_MAINNET_TOKEN_ADDRESS: string | null = null;
+// Official BSC Mainnet Deployments (Verified On-Chain Block 135,794,560, Chain ID 56)
+export const BSC_MAINNET_LIORA_TOKEN_ADDRESS = "0xE7B7fAd9EFDE37b3c9d47216044ECed6f7fd630A"; // UUPS Proxy Address
+export const BSC_MAINNET_LIORA_PROXY_ADDRESS = "0xE7B7fAd9EFDE37b3c9d47216044ECed6f7fd630A";
+export const BSC_MAINNET_LIORA_IMPLEMENTATION_ADDRESS = "0x22C6F5B2e9b03e99FB030a96A2ada0c28BA280a0";
+export const BSC_MAINNET_LIORA_RESERVE_VAULT_ADDRESS = "0x244865302a1643702ACB66181DBd898F714EF6e0";
+export const BSC_MAINNET_LIORA_TIMELOCK_ADDRESS = "0xd03A64C31E2464DD2A7d69B538729A690b4ab177";
+export const BSC_MAINNET_OPERATING_TREASURY_ADDRESS = "0xD546c3263663C193447bAdF60741f3915b349064";
+export const BSC_MAINNET_GOVERNANCE_ADDRESS = "0x491d37ab13E66f6fd544Cdb3A4C57015D7fc2d54";
+
+export const BSC_MAINNET_TOKEN_ADDRESS: string = BSC_MAINNET_LIORA_TOKEN_ADDRESS;
 export const BSC_MAINNET_ALLOCATION_MANAGER_ADDRESS: string | null = null;
 export const BSC_MAINNET_SALE_ADDRESS: string | null = null; // Strictly null for mainnet
 
@@ -30,11 +39,11 @@ export const BSC_MAINNET_CONFIG: ChainNetworkConfig = {
   category: "PRODUCTION",
   status: "ACTIVE_TARGET",
   isTestnet: false,
-  contractAddress: BSC_MAINNET_TOKEN_ADDRESS, // Official address to be announced at Genesis Launch
+  contractAddress: BSC_MAINNET_TOKEN_ADDRESS,
   allocationManagerAddress: BSC_MAINNET_ALLOCATION_MANAGER_ADDRESS,
   explorerUrl: "https://bscscan.com",
   rpcUrl: "https://bsc-dataseed.binance.org/",
-  notes: "The only production network for OXENIQ in Phase 1.",
+  notes: "The official production network for LIORA on BNB Smart Chain.",
 };
 
 export const BSC_TESTNET_CONFIG: ChainNetworkConfig = {

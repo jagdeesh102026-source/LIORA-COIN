@@ -18,6 +18,14 @@
 *.credentials.*
 credentials.json
 secrets.json
+*keystore*.json
+deployer-keystore.json
+deployer-keystore.backup.json
+deployer-keystore.tmp.json
+*.keystore*
+*.keystore.json
+*.keystore.backup.json
+*.keystore.tmp.json
 
 # Blockchain wallet private keys, seed phrases & certificates
 *.key

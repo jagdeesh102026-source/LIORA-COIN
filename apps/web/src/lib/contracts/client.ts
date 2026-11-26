@@ -1,6 +1,12 @@
 import { createPublicClient, http, formatUnits, type Address } from 'viem';
-import { bscTestnet } from 'viem/chains';
+import { bsc, bscTestnet } from 'viem/chains';
 import {
+  BSC_MAINNET_CONFIG,
+  BSC_MAINNET_LIORA_TOKEN_ADDRESS,
+  BSC_MAINNET_LIORA_RESERVE_VAULT_ADDRESS,
+  BSC_MAINNET_LIORA_TIMELOCK_ADDRESS,
+  BSC_MAINNET_OPERATING_TREASURY_ADDRESS,
+  BSC_MAINNET_GOVERNANCE_ADDRESS,
   BSC_TESTNET_CONFIG,
   BSC_TESTNET_TOKEN_ADDRESS,
   BSC_TESTNET_ALLOCATION_MANAGER_ADDRESS,
@@ -9,6 +15,19 @@ import {
 import { OXENIQ_ABI } from './oxeniqAbi';
 import { ALLOCATION_MANAGER_ABI } from './allocationManagerAbi';
 import { testnetSaleAbi } from './testnetSaleAbi';
+
+/**
+ * Dedicated read-only public client for BNB Smart Chain Mainnet (Chain ID 56).
+ * Strictly read-only; never connects private keys or submits mutating transactions.
+ */
+export const bscMainnetPublicClient = createPublicClient({
+  chain: bsc,
+  transport: http(process.env.NEXT_PUBLIC_BSC_MAINNET_RPC || BSC_MAINNET_CONFIG.rpcUrl, {
+    retryCount: 3,
+    retryDelay: 1000,
+    timeout: 10_000,
+  }),
+});
 
 /**
  * Dedicated read-only public client for BNB Smart Chain Testnet.
@@ -22,6 +41,81 @@ export const bscTestnetPublicClient = createPublicClient({
     timeout: 10_000,
   }),
 });
+
+/**
+ * Standard ABI for LIORA UUPS Upgradeable ERC-20 on BSC Mainnet.
+ */
+export const LIORA_TOKEN_ABI = [
+  {
+    type: 'function',
+    name: 'name',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'string' }],
+  },
+  {
+    type: 'function',
+    name: 'symbol',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'string' }],
+  },
+  {
+    type: 'function',
+    name: 'decimals',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'uint8' }],
+  },
+  {
+    type: 'function',
+    name: 'totalSupply',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'balanceOf',
+    stateMutability: 'view',
+    inputs: [{ name: 'account', type: 'address' }],
+    outputs: [{ type: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'operatingTreasury',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'address' }],
+  },
+  {
+    type: 'function',
+    name: 'reserveVault',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'address' }],
+  },
+] as const;
+
+export interface MainnetTokenOverview {
+  address: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  totalSupply: string;
+  totalSupplyRaw: bigint;
+  operatingTreasuryAddress: string;
+  reserveVaultAddress: string;
+  timelockAddress: string;
+  governanceAddress: string;
+  treasuryBalance: string;
+  treasuryBalanceRaw: bigint;
+  reserveVaultBalance: string;
+  reserveVaultBalanceRaw: bigint;
+  chainId: number;
+  networkName: string;
+  explorerUrl: string;
+}
 
 export interface OnChainTokenData {
   address: string;
@@ -240,5 +334,90 @@ export async function fetchOnChainSaleData(
     availableInventory: inventory,
     availableInventoryFormatted: formatTokenBalance(inventory, 18),
     isPaused,
+  };
+}
+
+/**
+ * Reads official token overview and treasury balances from BNB Smart Chain Mainnet.
+ * Live RPC query at contract 0xE7B7fAd9EFDE37b3c9d47216044ECed6f7fd630A.
+ */
+export async function fetchMainnetTokenOverview(): Promise<MainnetTokenOverview> {
+  const tokenAddr = BSC_MAINNET_LIORA_TOKEN_ADDRESS as Address;
+  const treasuryAddr = BSC_MAINNET_OPERATING_TREASURY_ADDRESS as Address;
+  const reserveVaultAddr = BSC_MAINNET_LIORA_RESERVE_VAULT_ADDRESS as Address;
+
+  const [name, symbol, decimals, totalSupply, treasuryBalanceRaw, reserveVaultBalanceRaw] = await Promise.all([
+    bscMainnetPublicClient.readContract({
+      address: tokenAddr,
+      abi: LIORA_TOKEN_ABI,
+      functionName: 'name',
+    }),
+    bscMainnetPublicClient.readContract({
+      address: tokenAddr,
+      abi: LIORA_TOKEN_ABI,
+      functionName: 'symbol',
+    }),
+    bscMainnetPublicClient.readContract({
+      address: tokenAddr,
+      abi: LIORA_TOKEN_ABI,
+      functionName: 'decimals',
+    }),
+    bscMainnetPublicClient.readContract({
+      address: tokenAddr,
+      abi: LIORA_TOKEN_ABI,
+      functionName: 'totalSupply',
+    }),
+    bscMainnetPublicClient.readContract({
+      address: tokenAddr,
+      abi: LIORA_TOKEN_ABI,
+      functionName: 'balanceOf',
+      args: [treasuryAddr],
+    }),
+    bscMainnetPublicClient.readContract({
+      address: tokenAddr,
+      abi: LIORA_TOKEN_ABI,
+      functionName: 'balanceOf',
+      args: [reserveVaultAddr],
+    }),
+  ]);
+
+  return {
+    address: BSC_MAINNET_LIORA_TOKEN_ADDRESS,
+    name,
+    symbol,
+    decimals,
+    totalSupply: formatTokenBalance(totalSupply, decimals),
+    totalSupplyRaw: totalSupply,
+    operatingTreasuryAddress: BSC_MAINNET_OPERATING_TREASURY_ADDRESS,
+    reserveVaultAddress: BSC_MAINNET_LIORA_RESERVE_VAULT_ADDRESS,
+    timelockAddress: BSC_MAINNET_LIORA_TIMELOCK_ADDRESS,
+    governanceAddress: BSC_MAINNET_GOVERNANCE_ADDRESS,
+    treasuryBalance: formatTokenBalance(treasuryBalanceRaw, decimals),
+    treasuryBalanceRaw,
+    reserveVaultBalance: formatTokenBalance(reserveVaultBalanceRaw, decimals),
+    reserveVaultBalanceRaw,
+    chainId: 56,
+    networkName: 'BNB Smart Chain Mainnet',
+    explorerUrl: BSC_MAINNET_CONFIG.explorerUrl,
+  };
+}
+
+/**
+ * Reads user's LIORA token balance from BNB Smart Chain Mainnet.
+ */
+export async function fetchMainnetUserTokenBalance(
+  userAddress: string,
+  contractAddress: string = BSC_MAINNET_LIORA_TOKEN_ADDRESS
+): Promise<{ raw: bigint; formatted: string }> {
+  const raw = await bscMainnetPublicClient.readContract({
+    address: contractAddress as Address,
+    abi: LIORA_TOKEN_ABI,
+    functionName: 'balanceOf',
+    args: [userAddress as Address],
+  });
+
+  return {
+    raw,
+    formatted: formatTokenBalance(raw, 18),
   };
 }

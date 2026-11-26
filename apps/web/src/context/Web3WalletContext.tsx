@@ -80,6 +80,9 @@ const LOCAL_DEVNET_CHAIN_ID = 31337;
 // Production Gate: In this phase, BSC Mainnet transactions remain strictly disabled.
 // Only BSC Testnet (#97) and Local Devnet (#31337) are authorized for operations.
 const SUPPORTED_CHAIN_IDS = [BSC_TESTNET_CHAIN_ID, LOCAL_DEVNET_CHAIN_ID];
+// Supported networks: BSC Mainnet (#56) for read-only connectivity, BSC Testnet (#97), and Local Devnet (#31337).
+// Note: Write transactions on BSC Mainnet remain strictly blocked by assertBscTransactionReady().
+const SUPPORTED_CHAIN_IDS = [BSC_MAINNET_CHAIN_ID, BSC_TESTNET_CHAIN_ID, LOCAL_DEVNET_CHAIN_ID];
 
 const BSC_CHAIN_PARAMS: Record<number, any> = {
   [BSC_TESTNET_CHAIN_ID]: {
@@ -300,7 +303,7 @@ export const Web3WalletProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           // If preference has a specific account and it's present in active accounts, use it; else accounts[0]
           const targetAccount =
             preference?.account &&
-            accounts.some((a: string) => a.toLowerCase() === preference.account!.toLowerCase())
+              accounts.some((a: string) => a.toLowerCase() === preference.account!.toLowerCase())
               ? preference.account
               : accounts[0];
 
@@ -541,15 +544,24 @@ export const Web3WalletProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
     if (!isSupportedChain) {
       const isMainnet = chainId === BSC_MAINNET_CHAIN_ID;
-      return {
-        ready: false,
-        error: isMainnet
-          ? 'BNB Smart Chain Mainnet transactions are disabled in this phase. Real settlements require separate approval. Please switch to BSC Testnet (#97).'
-          : `Unsupported network (Chain #${chainId}). Liora Coin testing transactions are supported exclusively on BSC Testnet (#97).`,
-      };
-    }
-    return { ready: true };
-  }, [isConnected, address, isSupportedChain, chainId]);
+      // Mainnet transactions remain STRICTLY disabled for Phase 1 (Read-Only Mode)
+      if (chainId === BSC_MAINNET_CHAIN_ID) {
+        return {
+          ready: false,
+          error: isMainnet
+            ? 'BNB Smart Chain Mainnet transactions are disabled in this phase. Real settlements require separate approval. Please switch to BSC Testnet (#97).'
+            : `Unsupported network (Chain #${chainId}). Liora Coin testing transactions are supported exclusively on BSC Testnet (#97).`,
+          error: 'BNB Smart Chain Mainnet transactions and write operations remain strictly disabled. The portal is operating in verified read-only mode.',
+        };
+      }
+      if (!isSupportedChain || chainId !== BSC_TESTNET_CHAIN_ID) {
+        return {
+          ready: false,
+          error: `Unsupported network (Chain #${chainId}). Liora Coin testing transactions are supported exclusively on BSC Testnet (#97).`,
+        };
+      }
+      return { ready: true };
+    }, [isConnected, address, isSupportedChain, chainId]);
 
   const signMessage = useCallback(
     async (message: string): Promise<string | null> => {

@@ -24,6 +24,7 @@ export type FeeModelType = 'GAS_EVM' | 'ENERGY_BANDWIDTH' | 'UTXO_SAT_VB';
 
 export type ChainOperationalStatus =
   | 'ACTIVE_OPERATIONAL'
+  | 'READ_ONLY_MAINNET'
   | 'TESTING_ONLY'
   | 'DEV_MOCK_ONLY'
   | 'DISABLED_UNTIL_APPROVED'

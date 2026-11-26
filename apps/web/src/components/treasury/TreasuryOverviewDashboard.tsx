@@ -54,17 +54,24 @@ export const TreasuryOverviewDashboard: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-subtle)]">
-              <span className="w-2 h-2 rounded-full bg-blue-400" />
-              <span className="text-secondary">Authority:</span>
+            <a
+              href={`https://bscscan.com/address/${authorizedTreasuryWallet}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[var(--bg-primary)] hover:bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--brand-accent)] transition-colors"
+              title="View Operating Treasury on BscScan Mainnet"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span className="text-secondary">Mainnet Treasury:</span>
               <span className="text-white font-bold">
                 {authorizedTreasuryWallet.slice(0, 6)}...{authorizedTreasuryWallet.slice(-4)}
               </span>
-            </div>
+              <ExternalLink className="w-3 h-3 ml-0.5" />
+            </a>
             <button
               type="button"
               onClick={refreshTreasury}
-              className="p-1.5 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-subtle)] text-secondary hover:text-white transition-all"
+              className="p-1.5 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-subtle)] text-secondary hover:text-white transition-all cursor-pointer"
               title="Refresh Ledger"
             >
               <RefreshCw className="w-4 h-4" />
@@ -73,11 +80,11 @@ export const TreasuryOverviewDashboard: React.FC = () => {
         </div>
 
         {/* Treasury Authority Callout */}
-        <div className="p-3 rounded-2xl bg-blue-950/20 border border-blue-500/20 text-blue-200 text-xs flex items-center justify-between">
+        <div className="p-3 rounded-2xl bg-blue-950/20 border border-blue-500/20 text-blue-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Lock className="w-4 h-4 text-blue-400 shrink-0" />
             <span>
-              <strong>Single Controlling Wallet Authority:</strong> Management confirmed single company wallet governance.
+              <strong>BSC Mainnet Treasury Governance:</strong> 1,000,000,000 LIORA Operating Treasury (<a href={`https://bscscan.com/address/${authorizedTreasuryWallet}`} target="_blank" rel="noreferrer" className="text-emerald-300 font-mono hover:underline">0xD546...9064</a>) & 99,000,000,000 LIORA Restricted Reserve Vault (<a href="https://bscscan.com/address/0x244865302a1643702ACB66181DBd898F714EF6e0" target="_blank" rel="noreferrer" className="text-amber-300 font-mono hover:underline">0x2448...F6e0</a>).
               {isTreasuryAuthority ? (
                 <span className="ml-1 text-emerald-400 font-bold">Your connected wallet is AUTHORIZED.</span>
               ) : (

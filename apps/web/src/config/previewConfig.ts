@@ -41,8 +41,8 @@ export const PREVIEW_CONFIG = {
   lockAdminConsole: false,
 
   // Visual Advisories & Labels
-  previewBadgeText: 'Confidential Review Preview',
-  previewBannerMessage: 'SECURE READ-ONLY PREVIEW — Live trading, real payments, and proprietary algorithms are disabled for remote review.',
+  previewBadgeText: 'BSC Mainnet Verified (Read-Only)',
+  previewBannerMessage: 'BSC MAINNET LIVE — LIORA smart contracts verified on BNB Smart Chain. Website operating in secure read-only mode (Trading, liquidity & purchases disabled).',
   tradingBotRestrictedNotice: 'Proprietary Trading Strategy (ALGOX V6_1_24) is confidential and protected under NDA. Strategy parameters, webhook receivers, and signal feeds are disabled during external remote preview.',
   adminRestrictedNotice: 'Administrative governance and parameter modifications are locked in Remote Review Mode.',
 };

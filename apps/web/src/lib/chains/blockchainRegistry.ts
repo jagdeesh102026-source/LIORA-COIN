@@ -51,8 +51,8 @@ export const BLOCKCHAIN_REGISTRY: Record<NetworkId, BlockchainConfig> = {
     family: 'EVM',
     chainId: 56,
     isTestnet: false,
-    enabled: false, // STRICTLY DISABLED UNTIL SEPARATELY APPROVED
-    status: 'DISABLED_UNTIL_APPROVED',
+    enabled: true, // ACTIVE FOR READ-ONLY MAINNET INTEGRATION
+    status: 'READ_ONLY_MAINNET',
     nativeAsset: { symbol: 'BNB', name: 'BNB', decimals: 18 },
     rpcUrls: ['https://bsc-dataseed.binance.org/'],
     blockExplorerUrls: ['https://bscscan.com'],
@@ -61,12 +61,12 @@ export const BLOCKCHAIN_REGISTRY: Record<NetworkId, BlockchainConfig> = {
     feeModel: 'GAS_EVM',
     confirmationsRequired: 15,
     features: {
-      smartContracts: false, // Disabled prior to Mainnet authorization
-      tokenTransfers: false,
-      tradingBotPayments: false,
-      investorLocking: false
+      smartContracts: true, // Enabled for read-only contract state & token queries
+      tokenTransfers: false, // STRICTLY DISABLED IN PHASE 1
+      tradingBotPayments: false, // STRICTLY DISABLED IN PHASE 1
+      investorLocking: false // STRICTLY DISABLED IN PHASE 1
     },
-    notes: 'Production genesis network. Real transactions and deployments remain strictly disabled.'
+    notes: 'Official BSC Mainnet deployment. Smart contract state and token balances enabled in read-only mode. Financial transactions and trading remain strictly disabled.'
   },
 
   'local-devnet': {
@@ -239,6 +239,20 @@ export const BLOCKCHAIN_REGISTRY: Record<NetworkId, BlockchainConfig> = {
 // MULTI-CHAIN TOKEN REGISTRY (CHAIN-AWARE DECIMALS & STANDARDS)
 // ============================================================================
 export const CHAIN_AWARE_TOKENS: Record<string, ChainAwareToken> = {
+  // --- BSC MAINNET TOKENS (OFFICIAL ON-CHAIN CONTRACT) ---
+  'bsc-mainnet:liora': {
+    tokenKey: 'bsc-mainnet:liora',
+    symbol: 'LIORA',
+    name: 'LIORA',
+    networkId: 'bsc-mainnet',
+    family: 'EVM',
+    standard: 'BEP-20',
+    decimals: 18,
+    contractAddress: '0xE7B7fAd9EFDE37b3c9d47216044ECed6f7fd630A',
+    isNative: false,
+    isPrimaryPair: true
+  },
+
   // --- BSC TESTNET TOKENS ---
   'bsc:liora': {
     tokenKey: 'bsc:liora',

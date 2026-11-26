@@ -9,10 +9,17 @@
  * - Invariant: Zero double-counting. Same tokens cannot be counted simultaneously as investor holdings and liquidity reserves.
  */
 
-export const AUTHORIZED_TREASURY_WALLET = '0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350'.toLowerCase();
-export const TOTAL_SUPPLY_LIORA = 1_000_000_000n * 10n ** 18n; // 1 Billion tokens (18 decimals)
-export const CLIENT_ALLOCATION_TOTAL_LIORA = 700_000_000n * 10n ** 18n; // 70% (700 Million)
-export const COMPANY_RESERVE_TOTAL_LIORA = 300_000_000n * 10n ** 18n; // 30% (300 Million)
+// Network-specific Treasury and Governance Addresses
+export const BSC_TESTNET_TREASURY_WALLET = '0xe31A2ec1474DfA2F5316dA0033f3Bd57F9D19350'.toLowerCase();
+export const BSC_MAINNET_TREASURY_WALLET = '0xD546c3263663C193447bAdF60741f3915b349064'.toLowerCase();
+export const BSC_MAINNET_RESERVE_VAULT = '0x244865302a1643702ACB66181DBd898F714EF6e0'.toLowerCase();
+export const BSC_MAINNET_GOVERNANCE_WALLET = '0x491d37ab13E66f6fd544Cdb3A4C57015D7fc2d54'.toLowerCase();
+
+// Authorized Treasury Wallet for production accounting (Mainnet Operating Treasury)
+export const AUTHORIZED_TREASURY_WALLET = BSC_MAINNET_TREASURY_WALLET;
+export const TOTAL_SUPPLY_LIORA = 100_000_000_000n * 10n ** 18n; // 100 Billion fixed cap on BSC Mainnet
+export const CLIENT_ALLOCATION_TOTAL_LIORA = 1_000_000_000n * 10n ** 18n; // 1 Billion Operating Treasury allocation (1%)
+export const COMPANY_RESERVE_TOTAL_LIORA = 99_000_000_000n * 10n ** 18n; // 99 Billion Restricted Reserve Vault allocation (99%)
 
 export interface PrimarySaleReceipt {
   saleId: string;
@@ -117,9 +124,17 @@ class TreasuryAccountingEngine {
   /**
    * Asserts whether a given wallet address holds authorized treasury management role.
    */
-  public isAuthorizedTreasuryWallet(address: string | null | undefined): boolean {
+  public isAuthorizedTreasuryWallet(address: string | null | undefined, networkId?: string): boolean {
     if (!address) return false;
-    return address.toLowerCase() === AUTHORIZED_TREASURY_WALLET;
+    const clean = address.toLowerCase();
+    if (networkId === 'bsc-testnet') {
+      return clean === BSC_TESTNET_TREASURY_WALLET;
+    }
+    return (
+      clean === BSC_MAINNET_TREASURY_WALLET ||
+      clean === BSC_TESTNET_TREASURY_WALLET ||
+      clean === BSC_MAINNET_GOVERNANCE_WALLET
+    );
   }
 
   /**

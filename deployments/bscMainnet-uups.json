@@ -1,0 +1,28 @@
+{
+  "network": "bscMainnet",
+  "chainId": 56,
+  "deployedAt": "2026-11-24T14:01:31.255Z",
+  "governanceModel": "SINGLE_WALLET_GOVERNANCE",
+  "deployer": "0xb75c5d303fBC41430ee5731Bdf7Fad7A98da173c",
+  "architecture": "UUPS_UPGRADEABLE_PROXY_ERC1967",
+  "contracts": {
+    "proxyAddress": "0xE7B7fAd9EFDE37b3c9d47216044ECed6f7fd630A",
+    "implementationV1": "0x22C6F5B2e9b03e99FB030a96A2ada0c28BA280a0",
+    "timelockAddress": "0xd03A64C31E2464DD2A7d69B538729A690b4ab177",
+    "reserveVaultAddress": "0x244865302a1643702ACB66181DBd898F714EF6e0"
+  },
+  "governance": {
+    "operatingTreasuryAddress": "0xD546c3263663C193447bAdF60741f3915b349064",
+    "governanceAddress": "0x491d37ab13E66f6fd544Cdb3A4C57015D7fc2d54",
+    "isMultisig": false,
+    "minDelaySeconds": 172800
+  },
+  "token": {
+    "name": "LIORA",
+    "symbol": "LIORA",
+    "decimals": 18,
+    "totalSupply": "100000000000000000000000000000",
+    "treasuryBalance": "1000000000000000000000000000",
+    "reserveBalance": "99000000000000000000000000000"
+  }
+}

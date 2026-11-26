@@ -7,11 +7,16 @@ import {
   fetchOnChainAllocationData,
   fetchOnChainSaleData,
   fetchOnChainUserTokenBalance,
+  fetchMainnetTokenOverview,
+  fetchMainnetUserTokenBalance,
   type OnChainTokenData,
   type OnChainAllocationData,
   type OnChainSaleData,
+  type MainnetTokenOverview,
 } from '../lib/contracts/client';
 import {
+  BSC_MAINNET_LIORA_TOKEN_ADDRESS,
+  BSC_MAINNET_CONFIG,
   BSC_TESTNET_TOKEN_ADDRESS,
   BSC_TESTNET_ALLOCATION_MANAGER_ADDRESS,
   BSC_TESTNET_SALE_ADDRESS,
@@ -23,16 +28,20 @@ export interface OxeniqContractState {
   error: string | null;
   balanceError: string | null;
   tokenData: OnChainTokenData | null;
+  mainnetOverview: MainnetTokenOverview | null;
   allocationData: OnChainAllocationData | null;
   saleData: OnChainSaleData | null;
   userBalance: string | null;
   userBalanceRaw: bigint | null;
   isTestnet: boolean;
+  isMainnet: boolean;
   tokenAddress: string;
+  mainnetTokenAddress: string;
   allocationManagerAddress: string;
   saleAddress: string;
   isWalletConnected: boolean;
   isWalletOnBscTestnet: boolean;
+  isWalletOnBscMainnet: boolean;
   isWrongNetwork: boolean;
   walletNetworkError: string | null;
   refresh: () => Promise<void>;
@@ -40,7 +49,7 @@ export interface OxeniqContractState {
 }
 
 export function useOxeniqContract(): OxeniqContractState {
-  const { address, isConnected, chainId, isBscTestnet, isWrongNetwork, chainName } = useWeb3Wallet();
+  const { address, isConnected, chainId, isBscTestnet, isBscMainnet, isWrongNetwork, chainName } = useWeb3Wallet();
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isBalanceLoading, setIsBalanceLoading] = useState<boolean>(false);
@@ -48,6 +57,7 @@ export function useOxeniqContract(): OxeniqContractState {
   const [balanceError, setBalanceError] = useState<string | null>(null);
 
   const [tokenData, setTokenData] = useState<OnChainTokenData | null>(null);
+  const [mainnetOverview, setMainnetOverview] = useState<MainnetTokenOverview | null>(null);
   const [allocationData, setAllocationData] = useState<OnChainAllocationData | null>(null);
   const [saleData, setSaleData] = useState<OnChainSaleData | null>(null);
 
@@ -55,8 +65,8 @@ export function useOxeniqContract(): OxeniqContractState {
   const [userBalanceRaw, setUserBalanceRaw] = useState<bigint | null>(null);
 
   // Compute network error description
-  const walletNetworkError = isConnected && !isBscTestnet
-    ? `Wallet is connected to ${chainName || `Chain #${chainId}`}. Switch network to BNB Smart Chain Testnet (Chain ID 97) to view and transact with your testnet OXENIQ balance.`
+  const walletNetworkError = isConnected && !isBscMainnet && !isBscTestnet
+    ? `Wallet is connected to ${chainName || `Chain #${chainId}`}. Connect to BNB Smart Chain Mainnet (Chain ID 56) or Testnet (Chain ID 97) to view your token balance.`
     : null;
 
   // Fetch user balance
@@ -69,30 +79,33 @@ export function useOxeniqContract(): OxeniqContractState {
       return;
     }
 
-    if (!isBscTestnet) {
-      setUserBalance(null);
-      setUserBalanceRaw(null);
-      setBalanceError('Unsupported network. Switch to BSC Testnet (#97).');
-      setIsBalanceLoading(false);
-      return;
-    }
-
     setIsBalanceLoading(true);
     setBalanceError(null);
 
     try {
-      const balanceRes = await fetchOnChainUserTokenBalance(address, BSC_TESTNET_TOKEN_ADDRESS);
-      setUserBalance(balanceRes.formatted);
-      setUserBalanceRaw(balanceRes.raw);
+      if (isBscMainnet || (!isBscTestnet && chainId === 56)) {
+        // Query official Mainnet token balance
+        const balanceRes = await fetchMainnetUserTokenBalance(address, BSC_MAINNET_LIORA_TOKEN_ADDRESS);
+        setUserBalance(balanceRes.formatted);
+        setUserBalanceRaw(balanceRes.raw);
+      } else if (isBscTestnet) {
+        // Query testnet token balance
+        const balanceRes = await fetchOnChainUserTokenBalance(address, BSC_TESTNET_TOKEN_ADDRESS);
+        setUserBalance(balanceRes.formatted);
+        setUserBalanceRaw(balanceRes.raw);
+      } else {
+        setUserBalance('0.00');
+        setUserBalanceRaw(0n);
+      }
     } catch (balanceErr: any) {
-      console.warn('Failed to fetch user token balance from BSC Testnet:', balanceErr);
+      console.warn('Failed to fetch user token balance from BSC:', balanceErr);
       setUserBalance(null);
       setUserBalanceRaw(null);
-      setBalanceError('Failed to read balance from BSC Testnet RPC. Please verify connection.');
+      setBalanceError('Failed to read balance from BSC RPC. Please verify connection.');
     } finally {
       setIsBalanceLoading(false);
     }
-  }, [isConnected, address, isBscTestnet]);
+  }, [isConnected, address, isBscMainnet, isBscTestnet, chainId]);
 
   // Fetch all public contract data
   const loadContractData = useCallback(async () => {
@@ -100,24 +113,35 @@ export function useOxeniqContract(): OxeniqContractState {
     setError(null);
 
     try {
-      // 1. Fetch public token, allocation, and sale metadata from BSC Testnet RPC
-      const [tokenResult, allocResult, saleResult] = await Promise.all([
-        fetchOnChainTokenMetadata(BSC_TESTNET_TOKEN_ADDRESS),
-        fetchOnChainAllocationData(BSC_TESTNET_ALLOCATION_MANAGER_ADDRESS),
-        fetchOnChainSaleData(BSC_TESTNET_SALE_ADDRESS),
-      ]);
+      // 1. Always fetch official BSC Mainnet token overview
+      try {
+        const mainnetRes = await fetchMainnetTokenOverview();
+        setMainnetOverview(mainnetRes);
+      } catch (mainnetErr: any) {
+        console.warn('Failed to read Mainnet contract data:', mainnetErr);
+      }
 
-      setTokenData(tokenResult);
-      setAllocationData(allocResult);
-      setSaleData(saleResult);
+      // 2. Fetch BSC Testnet metadata for fallback/developer view
+      try {
+        const [tokenResult, allocResult, saleResult] = await Promise.all([
+          fetchOnChainTokenMetadata(BSC_TESTNET_TOKEN_ADDRESS),
+          fetchOnChainAllocationData(BSC_TESTNET_ALLOCATION_MANAGER_ADDRESS),
+          fetchOnChainSaleData(BSC_TESTNET_SALE_ADDRESS),
+        ]);
+        setTokenData(tokenResult);
+        setAllocationData(allocResult);
+        setSaleData(saleResult);
+      } catch (testnetErr: any) {
+        console.warn('Testnet metadata query notice:', testnetErr);
+      }
     } catch (err: any) {
-      console.warn('Failed to read contract data from BSC Testnet:', err);
-      setError('Unable to load live contract data from BSC Testnet RPC. Please check your network connection.');
+      console.warn('Failed to read contract data from BSC:', err);
+      setError('Unable to load live contract data from BSC RPC. Please check your network connection.');
     } finally {
       setIsLoading(false);
     }
 
-    // 2. Refresh user balance
+    // 3. Refresh user balance
     await loadUserBalance();
   }, [loadUserBalance]);
 
@@ -136,16 +160,20 @@ export function useOxeniqContract(): OxeniqContractState {
     error,
     balanceError,
     tokenData,
+    mainnetOverview,
     allocationData,
     saleData,
     userBalance,
     userBalanceRaw,
     isTestnet: isBscTestnet,
-    tokenAddress: BSC_TESTNET_TOKEN_ADDRESS,
+    isMainnet: isBscMainnet,
+    tokenAddress: BSC_MAINNET_LIORA_TOKEN_ADDRESS,
+    mainnetTokenAddress: BSC_MAINNET_LIORA_TOKEN_ADDRESS,
     allocationManagerAddress: BSC_TESTNET_ALLOCATION_MANAGER_ADDRESS,
     saleAddress: BSC_TESTNET_SALE_ADDRESS,
     isWalletConnected: isConnected,
     isWalletOnBscTestnet: isBscTestnet,
+    isWalletOnBscMainnet: isBscMainnet,
     isWrongNetwork,
     walletNetworkError,
     refresh: loadContractData,

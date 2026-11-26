@@ -7,14 +7,13 @@ const path = require("path");
  * LIORA UUPS Upgradeable Ecosystem — BSC Mainnet Production Deployment Engine
  * Target Network: BNB Smart Chain Mainnet (Chain ID 56)
  *
- * Requirements & Invariants:
- * 1. Hardhat Chain ID must be 56 (BSC Mainnet).
- * 2. ENABLE_MAINNET_DEPLOYMENT=true must be explicitly defined in environment.
- * 3. Dedicated MAINNET_DEPLOYER_PRIVATE_KEY must be configured (strictly isolated from testnet).
- * 4. Operating Treasury receives exactly 1,000,000,000 LIORA (1B).
- * 5. LioraReserveVault receives exactly 99,000,000,000 LIORA (99B).
- * 6. Timelock delay configured to 48 hours (172,800 seconds).
- * 7. Deployer relinquishes all roles post-deployment, ending with 0 tokens and 0 admin roles.
+ * Governance Architecture:
+ * - Supports dedicated Single-Wallet Governance (gated by ALLOW_SINGLE_WALLET_GOVERNANCE=true)
+ *   or immediate Corporate Safe Multisig (LIORA_MAINNET_SAFE_MULTISIG).
+ * - Enforces strict 3-role separation: Deployer != Treasury != Governance.
+ * - Retains UUPS upgradeable architecture and mandatory 48-hour Timelock.
+ * - Supply Invariants: 100B total, 1B Treasury, 99B Reserve Vault.
+ * - Supports seamless post-deployment migration to Safe Multisig with ZERO proxy changes.
  */
 async function main() {
   console.log("======================================================================");
@@ -27,38 +26,42 @@ async function main() {
   console.log(`Active Network:  ${hre.network.name}`);
   console.log(`Active Chain ID: ${chainId}`);
 
-  // Guard 1: Chain ID Verification
+  // Guard 1: Strict Chain ID Verification
   if (chainId !== 56) {
     throw new Error(
       `CRITICAL SAFETY ABORT: Active Chain ID is ${chainId}. This script is exclusively intended for BSC Mainnet (Chain ID 56).`
     );
   }
 
-  // Guard 2: Explicit Production Opt-In Flag
+  // Guard 2: Production Deployment Master Opt-In Flag
   if (process.env.ENABLE_MAINNET_DEPLOYMENT !== "true") {
     throw new Error(
       "CRITICAL SAFETY ABORT: ENABLE_MAINNET_DEPLOYMENT is not set to 'true'. Mainnet deployment is strictly locked."
     );
   }
 
-  // Guard 3: Prevent duplicate deployments / artifact collision
+  // Guard 3: Artifact Collision & Resumption Safety
   const deploymentsDir = path.resolve(__dirname, "../deployments");
   const mainnetArtifactPath = path.join(deploymentsDir, "bscMainnet-uups.json");
+  const recoveryArtifactPath = path.join(deploymentsDir, "bscMainnet-uups.partial.json");
+
   if (fs.existsSync(mainnetArtifactPath)) {
     throw new Error(
       `CRITICAL SAFETY ABORT: Deployment artifact already exists at '${mainnetArtifactPath}'. Deployment is locked to prevent duplicate contracts.`
     );
   }
 
+  // Retrieve Signer (Deployer EOA)
   const signers = await ethers.getSigners();
   if (!signers || signers.length === 0) {
     throw new Error("CRITICAL SAFETY ABORT: No mainnet deployer signer found. Configure MAINNET_DEPLOYER_PRIVATE_KEY.");
   }
   const deployer = signers[0];
-  console.log(`Deployer Address: ${deployer.address}`);
+  console.log(`\n[1] Deployer Account:`);
+  console.log(`- Address: ${deployer.address}`);
 
   const balance = await ethers.provider.getBalance(deployer.address);
-  console.log(`Deployer Balance: ${ethers.formatEther(balance)} BNB`);
+  console.log(`- Balance: ${ethers.formatEther(balance)} BNB`);
 
   if (balance < ethers.parseEther("0.02")) {
     throw new Error(
@@ -66,89 +69,158 @@ async function main() {
     );
   }
 
-  // Validated Mainnet Treasury & Governance Addresses
+  // Guard 4: Role Separation & Governance Configuration
   const operatingTreasuryAddress = process.env.LIORA_MAINNET_OPERATING_TREASURY || "0xD546c3263663C193447bAdF60741f3915b349064";
-  const safeMultisigAddress = process.env.LIORA_MAINNET_SAFE_MULTISIG;
+  const governanceAddress = process.env.LIORA_MAINNET_GOVERNANCE_WALLET || process.env.LIORA_MAINNET_SAFE_MULTISIG;
+  const isSingleWalletGovernance = !process.env.LIORA_MAINNET_SAFE_MULTISIG || (process.env.LIORA_MAINNET_GOVERNANCE_WALLET && process.env.LIORA_MAINNET_GOVERNANCE_WALLET !== process.env.LIORA_MAINNET_SAFE_MULTISIG);
   const minDelaySeconds = Number(process.env.LIORA_MAINNET_TIMELOCK_DELAY || 172800); // 48 hours
 
-  // Guard 4: Validate Addresses
   if (!ethers.isAddress(operatingTreasuryAddress) || operatingTreasuryAddress === ethers.ZeroAddress) {
     throw new Error(`CRITICAL ERROR: Invalid Operating Treasury address: ${operatingTreasuryAddress}`);
   }
 
-  if (!safeMultisigAddress || !ethers.isAddress(safeMultisigAddress) || safeMultisigAddress === ethers.ZeroAddress) {
+  if (!governanceAddress || !ethers.isAddress(governanceAddress) || governanceAddress === ethers.ZeroAddress) {
     throw new Error(
-      "CRITICAL BLOCKER: Corporate Safe Multisig address (LIORA_MAINNET_SAFE_MULTISIG) is not configured or invalid."
+      "CRITICAL BLOCKER: Governance address (LIORA_MAINNET_GOVERNANCE_WALLET or LIORA_MAINNET_SAFE_MULTISIG) is not configured or invalid."
     );
   }
 
-  if (operatingTreasuryAddress.toLowerCase() === safeMultisigAddress.toLowerCase()) {
-    throw new Error("CRITICAL ERROR: Operating Treasury and Safe Multisig cannot be identical addresses.");
+  // Guard 5: Single-Wallet Governance Authorization Gate
+  if (isSingleWalletGovernance) {
+    if (process.env.ALLOW_SINGLE_WALLET_GOVERNANCE !== "true") {
+      throw new Error(
+        "CRITICAL GOVERNANCE GATE: Single-wallet governance requires explicit documented management authorization. Set ALLOW_SINGLE_WALLET_GOVERNANCE='true' in .env once approved."
+      );
+    }
+    console.log("ℹ Governance Mode: SINGLE-WALLET GOVERNANCE (Management Authorization Confirmed)");
+  } else {
+    console.log("ℹ Governance Mode: CORPORATE SAFE MULTISIG GOVERNANCE");
   }
 
+  // Guard 6: Three-Role Separation Enforcement (Deployer != Treasury != Governance)
   if (deployer.address.toLowerCase() === operatingTreasuryAddress.toLowerCase()) {
-    throw new Error("CRITICAL ERROR: Deployer cannot be the Operating Treasury wallet.");
+    throw new Error("CRITICAL ROLE CONFLICT: Deployer cannot be identical to Operating Treasury.");
+  }
+  if (deployer.address.toLowerCase() === governanceAddress.toLowerCase()) {
+    throw new Error("CRITICAL ROLE CONFLICT: Deployer cannot be identical to Governance Wallet.");
+  }
+  if (operatingTreasuryAddress.toLowerCase() === governanceAddress.toLowerCase()) {
+    throw new Error("CRITICAL ROLE CONFLICT: Operating Treasury and Governance Wallet cannot be identical.");
   }
 
-  console.log("\nDeployment Configuration Validated:");
-  console.log(`- Operating Treasury:   ${operatingTreasuryAddress} (Receives 1,000,000,000 LIORA)`);
-  console.log(`- Corporate Safe Admin: ${safeMultisigAddress} (Controls Reserve & Timelock)`);
-  console.log(`- Timelock Delay:       ${minDelaySeconds} seconds (48 Hours)`);
+  console.log("\n[2] Validated 3-Role Architecture:");
+  console.log(`- 1. Deployer EOA:       ${deployer.address} (0 Tokens, Temporary setup rights only)`);
+  console.log(`- 2. Operating Treasury: ${operatingTreasuryAddress} (Receives 1,000,000,000 LIORA)`);
+  console.log(`- 3. Governance Admin:   ${governanceAddress} (Controls Reserve & Timelock)`);
+  console.log(`- Timelock Delay:        ${minDelaySeconds} seconds (48 Hours)`);
 
-  // Step 1: Deploy LioraReserveVault
-  console.log("\n[Step 1/7] Deploying LioraReserveVault.sol...");
+  let partialRecord = {};
+  if (fs.existsSync(recoveryArtifactPath)) {
+    try {
+      partialRecord = JSON.parse(fs.readFileSync(recoveryArtifactPath, "utf8"));
+      console.log("\n⚠ Detected partial deployment recovery record. Checking state...");
+    } catch (_) {}
+  }
+
+  // Step 1: Deploy LioraReserveVault (or resume)
+  let reserveVaultAddress = partialRecord.reserveVaultAddress;
+  let reserveVault;
   const VaultFactory = await ethers.getContractFactory("LioraReserveVault");
-  const reserveVault = await VaultFactory.deploy(deployer.address);
-  await reserveVault.waitForDeployment();
-  const reserveVaultAddress = await reserveVault.getAddress();
-  console.log(`✓ LioraReserveVault deployed at: ${reserveVaultAddress}`);
 
-  // Step 2: Deploy LioraTimelock
-  console.log(`\n[Step 2/7] Deploying LioraTimelock.sol (minDelay: ${minDelaySeconds}s)...`);
+  if (!reserveVaultAddress) {
+    console.log("\n[Step 1/7] Deploying LioraReserveVault.sol...");
+    reserveVault = await VaultFactory.deploy(deployer.address);
+    await reserveVault.waitForDeployment();
+    reserveVaultAddress = await reserveVault.getAddress();
+    partialRecord.reserveVaultAddress = reserveVaultAddress;
+    fs.writeFileSync(recoveryArtifactPath, JSON.stringify(partialRecord, null, 2));
+    console.log(`✓ LioraReserveVault deployed at: ${reserveVaultAddress}`);
+  } else {
+    reserveVault = VaultFactory.attach(reserveVaultAddress);
+    console.log(`✓ Resumed LioraReserveVault from recovery record: ${reserveVaultAddress}`);
+  }
+
+  // Step 2: Deploy LioraTimelock (or resume)
+  let timelockAddress = partialRecord.timelockAddress;
+  let timelock;
   const TimelockFactory = await ethers.getContractFactory("LioraTimelock");
-  const timelock = await TimelockFactory.deploy(
-    minDelaySeconds,
-    [safeMultisigAddress],
-    [safeMultisigAddress],
-    deployer.address
-  );
-  await timelock.waitForDeployment();
-  const timelockAddress = await timelock.getAddress();
-  console.log(`✓ LioraTimelock deployed at: ${timelockAddress}`);
 
-  // Step 3: Deploy LioraTokenUUPSV1 & ERC1967Proxy
-  console.log("\n[Step 3/7] Deploying LioraTokenUUPSV1 & ERC1967Proxy via upgrades.deployProxy...");
+  if (!timelockAddress) {
+    console.log(`\n[Step 2/7] Deploying LioraTimelock.sol (minDelay: ${minDelaySeconds}s)...`);
+    timelock = await TimelockFactory.deploy(
+      minDelaySeconds,
+      [governanceAddress],
+      [governanceAddress],
+      governanceAddress
+    );
+    await timelock.waitForDeployment();
+    timelockAddress = await timelock.getAddress();
+    partialRecord.timelockAddress = timelockAddress;
+    fs.writeFileSync(recoveryArtifactPath, JSON.stringify(partialRecord, null, 2));
+    console.log(`✓ LioraTimelock deployed at: ${timelockAddress}`);
+  } else {
+    timelock = TimelockFactory.attach(timelockAddress);
+    console.log(`✓ Resumed LioraTimelock from recovery record: ${timelockAddress}`);
+  }
+
+  // Step 3: Deploy LioraTokenUUPSV1 & ERC1967Proxy (or resume)
+  let proxyAddress = partialRecord.proxyAddress;
+  let implAddress = partialRecord.implAddress;
   const TokenV1Factory = await ethers.getContractFactory("LioraTokenUUPSV1");
-  const proxy = await upgrades.deployProxy(
-    TokenV1Factory,
-    [operatingTreasuryAddress, reserveVaultAddress, timelockAddress],
-    { kind: "uups", initializer: "initialize" }
-  );
-  await proxy.waitForDeployment();
-  const proxyAddress = await proxy.getAddress();
-  const implAddress = await upgrades.erc1967.getImplementationAddress(proxyAddress);
-  console.log(`✓ LIORA ERC1967Proxy deployed at:         ${proxyAddress}`);
-  console.log(`✓ LioraTokenUUPSV1 Implementation deployed: ${implAddress}`);
+
+  if (!proxyAddress) {
+    console.log("\n[Step 3/7] Deploying LioraTokenUUPSV1 & ERC1967Proxy via upgrades.deployProxy...");
+    const proxy = await upgrades.deployProxy(
+      TokenV1Factory,
+      [operatingTreasuryAddress, reserveVaultAddress, timelockAddress],
+      { kind: "uups", initializer: "initialize" }
+    );
+    await proxy.waitForDeployment();
+    proxyAddress = await proxy.getAddress();
+    implAddress = await upgrades.erc1967.getImplementationAddress(proxyAddress);
+    partialRecord.proxyAddress = proxyAddress;
+    partialRecord.implAddress = implAddress;
+    fs.writeFileSync(recoveryArtifactPath, JSON.stringify(partialRecord, null, 2));
+    console.log(`✓ LIORA ERC1967Proxy deployed at:           ${proxyAddress}`);
+    console.log(`✓ LioraTokenUUPSV1 Implementation deployed: ${implAddress}`);
+  } else {
+    console.log(`✓ Resumed LIORA ERC1967Proxy: ${proxyAddress}`);
+  }
 
   // Step 4: Bind Token to Reserve Vault
   console.log("\n[Step 4/7] Binding Token Proxy to LioraReserveVault...");
-  const bindTx = await reserveVault.setToken(proxyAddress);
-  await bindTx.wait();
-  console.log("✓ LioraReserveVault successfully bound to Token Proxy.");
+  const currentBoundToken = await reserveVault.token();
+  if (currentBoundToken === ethers.ZeroAddress) {
+    const bindTx = await reserveVault.setToken(proxyAddress);
+    await bindTx.wait();
+    console.log("✓ LioraReserveVault successfully bound to Token Proxy.");
+  } else {
+    console.log("✓ Token Proxy already bound to LioraReserveVault.");
+  }
 
-  // Step 5: Transfer Reserve Vault Ownership to Corporate Safe (Two-step transfer)
-  console.log("\n[Step 5/7] Transferring LioraReserveVault ownership to Corporate Safe...");
-  const transferTx = await reserveVault.transferOwnership(safeMultisigAddress);
-  await transferTx.wait();
-  console.log(`✓ Vault ownership transfer initiated to: ${safeMultisigAddress}`);
-  console.log("  (Safe multisig must execute acceptOwnership() via Safe UI to finalize)");
+  // Step 5: Transfer Reserve Vault Ownership to Governance Wallet (Two-step transfer)
+  console.log("\n[Step 5/7] Initiating LioraReserveVault ownership transfer to Governance Wallet...");
+  const currentVaultOwner = await reserveVault.owner();
+  if (currentVaultOwner.toLowerCase() !== governanceAddress.toLowerCase()) {
+    const transferTx = await reserveVault.transferOwnership(governanceAddress);
+    await transferTx.wait();
+    console.log(`✓ Vault ownership transfer initiated to: ${governanceAddress}`);
+    console.log(`  (Governance Wallet must call reserveVault.acceptOwnership() to finalize handover)`);
+  } else {
+    console.log("✓ Governance Wallet is already confirmed owner of LioraReserveVault.");
+  }
 
-  // Step 6: Renounce Deployer Admin on Timelock
-  console.log("\n[Step 6/7] Renouncing Deployer Admin role on LioraTimelock...");
+  // Step 6: Verify Deployer Has Zero Privileges on Timelock
+  console.log("\n[Step 6/7] Verifying Timelock governance permissions...");
   const TIMELOCK_ADMIN_ROLE = await timelock.DEFAULT_ADMIN_ROLE();
-  const renounceTx = await timelock.renounceRole(TIMELOCK_ADMIN_ROLE, deployer.address);
-  await renounceTx.wait();
-  console.log("✓ Deployer admin role renounced on Timelock.");
+  const deployerIsAdmin = await timelock.hasRole(TIMELOCK_ADMIN_ROLE, deployer.address);
+  if (deployerIsAdmin) {
+    const renounceTx = await timelock.renounceRole(TIMELOCK_ADMIN_ROLE, deployer.address);
+    await renounceTx.wait();
+    console.log("✓ Deployer admin role renounced on Timelock.");
+  } else {
+    console.log("✓ Deployer holds 0 roles on Timelock.");
+  }
 
   // Step 7: Post-Deployment Invariant Verification
   console.log("\n[Step 7/7] Running Post-Deployment Invariant Verification...");
@@ -176,11 +248,12 @@ async function main() {
     throw new Error("INVARIANT FAILURE: Deployer holds non-zero LIORA balance!");
   }
 
-  // Save Deployment Record
+  // Finalize Deployment Record
   const deploymentRecord = {
     network: "bscMainnet",
     chainId: 56,
     deployedAt: new Date().toISOString(),
+    governanceModel: isSingleWalletGovernance ? "SINGLE_WALLET_GOVERNANCE" : "CORPORATE_SAFE_MULTISIG",
     deployer: deployer.address,
     architecture: "UUPS_UPGRADEABLE_PROXY_ERC1967",
     contracts: {
@@ -191,7 +264,8 @@ async function main() {
     },
     governance: {
       operatingTreasuryAddress: operatingTreasuryAddress,
-      safeMultisigAddress: safeMultisigAddress,
+      governanceAddress: governanceAddress,
+      isMultisig: !isSingleWalletGovernance,
       minDelaySeconds: minDelaySeconds,
     },
     token: {
@@ -205,15 +279,29 @@ async function main() {
   };
 
   fs.writeFileSync(mainnetArtifactPath, JSON.stringify(deploymentRecord, null, 2));
-  console.log(`\n✓ Deployment artifact successfully saved to: ${mainnetArtifactPath}`);
+  if (fs.existsSync(recoveryArtifactPath)) {
+    fs.unlinkSync(recoveryArtifactPath);
+  }
+  console.log(`\n✓ Final deployment artifact saved to: ${mainnetArtifactPath}`);
+
+  const initData = TokenV1Factory.interface.encodeFunctionData("initialize", [
+    operatingTreasuryAddress,
+    reserveVaultAddress,
+    timelockAddress,
+  ]);
 
   console.log("\n======================================================================");
   console.log("MAINNET DEPLOYMENT COMPLETED SUCCESSFULLY");
   console.log("======================================================================");
-  console.log("\nNext Steps for BscScan Verification:");
-  console.log(`npx hardhat verify --network bscMainnet ${reserveVaultAddress} ${deployer.address}`);
-  console.log(`npx hardhat verify --network bscMainnet ${timelockAddress} ${minDelaySeconds} '["${safeMultisigAddress}"]' '["${safeMultisigAddress}"]' ${deployer.address}`);
-  console.log(`npx hardhat verify --network bscMainnet ${implAddress}`);
+  console.log("\nComplete BscScan Source Code Verification Commands:");
+  console.log(`1. Reserve Vault:`);
+  console.log(`   npx hardhat verify --network bscMainnet ${reserveVaultAddress} "${deployer.address}"`);
+  console.log(`2. Timelock Controller (48-Hour Delay):`);
+  console.log(`   npx hardhat verify --network bscMainnet ${timelockAddress} ${minDelaySeconds} '["${governanceAddress}"]' '["${governanceAddress}"]' "${governanceAddress}"`);
+  console.log(`3. Logic Implementation V1:`);
+  console.log(`   npx hardhat verify --network bscMainnet ${implAddress}`);
+  console.log(`4. ERC1967 Token Proxy:`);
+  console.log(`   npx hardhat verify --network bscMainnet ${proxyAddress} "${implAddress}" "${initData}"`);
 }
 
 main().catch((error) => {
