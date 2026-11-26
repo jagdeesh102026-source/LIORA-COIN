@@ -12,6 +12,13 @@ import {
   ILLUSTRATIVE_USD_INR_RATE,
 } from '../../lib/dex/dexOnChainClient';
 import {
+  BSC_MAINNET_LIORA_TOKEN_ADDRESS,
+  BSC_MAINNET_LIORA_RESERVE_VAULT_ADDRESS,
+  BSC_MAINNET_LIORA_TIMELOCK_ADDRESS,
+  BSC_MAINNET_OPERATING_TREASURY_ADDRESS,
+  isTestnetSandboxEnabled,
+} from '../../config/tokenConfig';
+import {
   CONFIRMED_INVESTMENT_PLANS,
 } from '../../lib/allocation/proportionalAllocationEngine';
 import {
@@ -43,6 +50,108 @@ interface LioraLiquidityDashboardProps {
 export const LioraLiquidityDashboard: React.FC<LioraLiquidityDashboardProps> = ({
   className = '',
 }) => {
+  const isDevSandbox = isTestnetSandboxEnabled();
+
+  if (!isDevSandbox) {
+    return (
+      <div className={`space-y-6 ${className}`}>
+        <div className="p-8 sm:p-10 rounded-3xl bg-[var(--bg-elevated)] border border-[var(--border-prominent)] shadow-2xl text-center space-y-6">
+          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400">
+            <Lock className="w-8 h-8" />
+          </div>
+
+          <div className="space-y-2 max-w-2xl mx-auto">
+            <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-400">
+              BNB Smart Chain Mainnet (Chain ID 56)
+            </span>
+            <h1 className="text-2xl sm:text-4xl font-extrabold text-white">
+              Mainnet Liquidity Staged &amp; Governed
+            </h1>
+            <p className="text-xs sm:text-sm text-secondary leading-relaxed">
+              Decentralized Automated Market Maker (AMM) liquidity pools for the official LIORA BEP-20 token are securely staged. To uphold protocol integrity and prevent premature market distortion, liquidity pool seeding and DEX trading remain locked in Phase 1.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto text-left pt-2">
+            <div className="p-4 rounded-2xl bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-2">
+              <div className="flex items-center justify-between text-xs text-muted">
+                <span>LIORA Token</span>
+                <Coins className="w-3.5 h-3.5 text-emerald-400" />
+              </div>
+              <div className="font-mono text-xs text-white truncate">
+                {BSC_MAINNET_LIORA_TOKEN_ADDRESS}
+              </div>
+              <a
+                href={`https://bscscan.com/token/${BSC_MAINNET_LIORA_TOKEN_ADDRESS}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11px] text-[var(--brand-accent)] hover:underline inline-flex items-center gap-1"
+              >
+                <span>BscScan Verified</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-2">
+              <div className="flex items-center justify-between text-xs text-muted">
+                <span>Reserve Vault (99B)</span>
+                <Layers className="w-3.5 h-3.5 text-amber-400" />
+              </div>
+              <div className="font-mono text-xs text-white truncate">
+                {BSC_MAINNET_LIORA_RESERVE_VAULT_ADDRESS}
+              </div>
+              <a
+                href={`https://bscscan.com/address/${BSC_MAINNET_LIORA_RESERVE_VAULT_ADDRESS}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11px] text-[var(--brand-accent)] hover:underline inline-flex items-center gap-1"
+              >
+                <span>Escrow Contract</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-2">
+              <div className="flex items-center justify-between text-xs text-muted">
+                <span>Timelock Governance</span>
+                <Clock className="w-3.5 h-3.5 text-cyan-400" />
+              </div>
+              <div className="font-mono text-xs text-white truncate">
+                {BSC_MAINNET_LIORA_TIMELOCK_ADDRESS}
+              </div>
+              <div className="text-[11px] text-cyan-300 font-medium">
+                48-Hour Delay Enforced
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-2">
+              <div className="flex items-center justify-between text-xs text-muted">
+                <span>Operating Treasury</span>
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+              </div>
+              <div className="font-mono text-xs text-white truncate">
+                {BSC_MAINNET_OPERATING_TREASURY_ADDRESS}
+              </div>
+              <div className="text-[11px] text-blue-300 font-medium">
+                1,000,000,000 LIORA Bound
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-amber-950/20 border border-amber-500/30 text-amber-200 text-xs max-w-2xl mx-auto flex items-start gap-3 text-left">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <strong className="text-amber-300">Phase 1 Mainnet Liquidity Invariant</strong>
+              <p className="text-secondary leading-relaxed">
+                No automated market maker liquidity pools (e.g. PancakeSwap LIORA/USDT, LIORA/WBNB) have been funded on BSC Mainnet. Any third-party pairs claiming to offer LIORA trading on decentralized exchanges are unauthorized and should be treated with extreme caution.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const {
     pool,
     isPoolLoading,

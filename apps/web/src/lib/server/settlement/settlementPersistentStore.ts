@@ -904,6 +904,13 @@ export class SettlementPersistentStore {
       };
     }
 
+    if (process.env.NODE_ENV === 'production' && params.chainId && params.chainId !== 56) {
+      return {
+        permitted: false,
+        error: 'TESTNET_EXECUTION_PROHIBITED_IN_PRODUCTION: Testnet operations are prohibited on the production website.',
+      };
+    }
+
     if (
       params.action === 'REAL_FIAT_PAYOUT' ||
       params.action === 'AUTOMATIC_COLLATERAL_SEIZURE' ||

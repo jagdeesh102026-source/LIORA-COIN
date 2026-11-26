@@ -18,6 +18,7 @@ import {
   BSC_MAINNET_LIORA_IMPLEMENTATION_ADDRESS,
   BSC_MAINNET_CONFIG,
   BSC_TESTNET_CONFIG,
+  isTestnetSandboxEnabled,
 } from '../../config/tokenConfig';
 import {
   CONFIRMED_INVESTMENT_PLANS,
@@ -44,6 +45,7 @@ import Link from 'next/link';
 export default function SwapPage() {
   const { isConnected, isWrongNetwork, isBscMainnet, isBscTestnet, connect, switchToBscMainnet, switchToBscTestnet, address } = useWeb3Wallet();
   const [activeTab, setActiveTab] = useState<'MAINNET_STATUS' | 'TESTNET_SANDBOX' | 'SIMULATION'>('MAINNET_STATUS');
+  const isDevSandbox = isTestnetSandboxEnabled();
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto py-4">
@@ -245,47 +247,49 @@ export default function SwapPage() {
             </Link>
           </div>
 
-          {/* Mode Switcher Banner */}
-          <div className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-between text-xs">
-            <span className="text-secondary font-semibold">Terminal Mode:</span>
-            <div className="flex items-center gap-1.5 bg-[var(--bg-primary)] p-1 rounded-xl border border-[var(--border-subtle)]">
-              <button
-                type="button"
-                onClick={() => setActiveTab('MAINNET_STATUS')}
-                className={`px-3 py-1 rounded-lg font-bold text-xs transition-all ${activeTab === 'MAINNET_STATUS'
-                    ? 'bg-emerald-500 text-black'
-                    : 'text-secondary hover:text-white'
-                  }`}
-              >
-                🔒 Mainnet Read-Only
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('TESTNET_SANDBOX')}
-                className={`px-3 py-1 rounded-lg font-bold text-xs transition-all ${activeTab === 'TESTNET_SANDBOX'
-                    ? 'bg-[var(--brand-accent)] text-black'
-                    : 'text-secondary hover:text-white'
-                  }`}
-              >
-                🧪 Testnet Sandbox
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('SIMULATION')}
-                className={`px-3 py-1 rounded-lg font-bold text-xs transition-all ${activeTab === 'SIMULATION'
-                    ? 'bg-[var(--brand-accent)] text-black'
-                    : 'text-secondary hover:text-white'
-                  }`}
-              >
-                📊 Multi-Asset Demo
-              </button>
+          {/* Mode Switcher Banner (Excluded from production website) */}
+          {isDevSandbox && (
+            <div className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-between text-xs">
+              <span className="text-secondary font-semibold">Terminal Mode:</span>
+              <div className="flex items-center gap-1.5 bg-[var(--bg-primary)] p-1 rounded-xl border border-[var(--border-subtle)]">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('MAINNET_STATUS')}
+                  className={`px-3 py-1 rounded-lg font-bold text-xs transition-all ${activeTab === 'MAINNET_STATUS'
+                      ? 'bg-emerald-500 text-black'
+                      : 'text-secondary hover:text-white'
+                    }`}
+                >
+                  🔒 Mainnet Read-Only
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('TESTNET_SANDBOX')}
+                  className={`px-3 py-1 rounded-lg font-bold text-xs transition-all ${activeTab === 'TESTNET_SANDBOX'
+                      ? 'bg-[var(--brand-accent)] text-black'
+                      : 'text-secondary hover:text-white'
+                    }`}
+                >
+                  🧪 Testnet Sandbox
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('SIMULATION')}
+                  className={`px-3 py-1 rounded-lg font-bold text-xs transition-all ${activeTab === 'SIMULATION'
+                      ? 'bg-[var(--brand-accent)] text-black'
+                      : 'text-secondary hover:text-white'
+                    }`}
+                >
+                  📊 Multi-Asset Demo
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Right Side: The Interactive Terminal / Mainnet Display (6 cols) */}
         <div className="lg:col-span-6 space-y-6">
-          {activeTab === 'MAINNET_STATUS' ? (
+          {!isDevSandbox || activeTab === 'MAINNET_STATUS' ? (
             <div className="p-8 rounded-3xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] shadow-2xl space-y-6 text-center">
               <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400">
                 <Lock className="w-8 h-8" />
@@ -329,14 +333,16 @@ export default function SwapPage() {
                   <span>Verify on BscScan</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('TESTNET_SANDBOX')}
-                  className="px-4 py-2.5 rounded-xl bg-[var(--bg-primary)] hover:bg-[var(--bg-subtle)] text-xs font-semibold text-secondary hover:text-white border border-[var(--border-subtle)] transition-all inline-flex items-center gap-1.5"
-                >
-                  <span>Open Developer Testnet Sandbox</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+                {isDevSandbox && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('TESTNET_SANDBOX')}
+                    className="px-4 py-2.5 rounded-xl bg-[var(--bg-primary)] hover:bg-[var(--bg-subtle)] text-xs font-semibold text-secondary hover:text-white border border-[var(--border-subtle)] transition-all inline-flex items-center gap-1.5"
+                  >
+                    <span>Open Developer Testnet Sandbox</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </div>
           ) : activeTab === 'TESTNET_SANDBOX' ? (

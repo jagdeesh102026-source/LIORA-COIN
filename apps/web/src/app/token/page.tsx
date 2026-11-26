@@ -18,6 +18,7 @@ import {
   BSC_TESTNET_TOKEN_ADDRESS,
   BSC_TESTNET_ALLOCATION_MANAGER_ADDRESS,
   BSC_TESTNET_SALE_ADDRESS,
+  isTestnetSandboxEnabled,
 } from '../../config/tokenConfig';
 import { useOxeniqContract } from '../../hooks/useOxeniqContract';
 import { useWeb3Wallet } from '../../hooks/useWeb3Wallet';
@@ -601,69 +602,71 @@ export default function TokenPage() {
         </div>
       </Card>
 
-      {/* Developer Testnet Sandbox Accordion (Requirement 9 & 11) */}
-      <Card className="border border-[var(--border-subtle)] space-y-4">
-        <button
-          type="button"
-          onClick={() => setShowTestnetSection(!showTestnetSection)}
-          className="w-full flex items-center justify-between text-left cursor-pointer"
-        >
-          <div className="flex items-center gap-2">
-            <Cpu className="w-4 h-4 text-blue-400" />
-            <h4 className="text-sm font-bold text-white">Developer Testnet Sandbox (Chain ID 97)</h4>
-            <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-500/10 text-blue-300 border border-blue-500/20">
-              Developer Only
-            </span>
-          </div>
-          <ChevronDown className={`w-4 h-4 text-secondary transition-transform ${showTestnetSection ? 'rotate-180' : ''}`} />
-        </button>
+      {/* Developer Testnet Sandbox Accordion (Excluded from production website) */}
+      {isTestnetSandboxEnabled() && (
+        <Card className="border border-[var(--border-subtle)] space-y-4">
+          <button
+            type="button"
+            onClick={() => setShowTestnetSection(!showTestnetSection)}
+            className="w-full flex items-center justify-between text-left cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <Cpu className="w-4 h-4 text-blue-400" />
+              <h4 className="text-sm font-bold text-white">Developer Testnet Sandbox (Chain ID 97)</h4>
+              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-500/10 text-blue-300 border border-blue-500/20">
+                Developer Only
+              </span>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-secondary transition-transform ${showTestnetSection ? 'rotate-180' : ''}`} />
+          </button>
 
-        {showTestnetSection && (
-          <div className="space-y-4 pt-3 border-t border-[var(--border-subtle)] text-xs">
-            <p className="text-secondary leading-relaxed">
-              For smart contract testing and E2E simulation prior to production release, the BSC Testnet contracts remain operational in a segregated environment.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-[11px]">
-              <div className="p-3 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-1">
-                <span className="text-muted text-[10px] uppercase font-semibold">Testnet Proxy:</span>
-                <div className="text-white break-all">{BSC_TESTNET_TOKEN_ADDRESS}</div>
-                <a
-                  href={`${BSC_TESTNET_CONFIG.explorerUrl}/address/${BSC_TESTNET_TOKEN_ADDRESS}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[var(--brand-accent)] hover:underline inline-flex items-center gap-1 text-[10px]"
-                >
-                  <span>BscScan Testnet</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
+          {showTestnetSection && (
+            <div className="space-y-4 pt-3 border-t border-[var(--border-subtle)] text-xs">
+              <p className="text-secondary leading-relaxed">
+                For smart contract testing and E2E simulation prior to production release, the BSC Testnet contracts remain operational in a segregated environment.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-[11px]">
+                <div className="p-3 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-1">
+                  <span className="text-muted text-[10px] uppercase font-semibold">Testnet Proxy:</span>
+                  <div className="text-white break-all">{BSC_TESTNET_TOKEN_ADDRESS}</div>
+                  <a
+                    href={`${BSC_TESTNET_CONFIG.explorerUrl}/address/${BSC_TESTNET_TOKEN_ADDRESS}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[var(--brand-accent)] hover:underline inline-flex items-center gap-1 text-[10px]"
+                  >
+                    <span>BscScan Testnet</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+                <div className="p-3 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-1">
+                  <span className="text-muted text-[10px] uppercase font-semibold">Testnet Sale:</span>
+                  <div className="text-white break-all">{BSC_TESTNET_SALE_ADDRESS}</div>
+                  <a
+                    href={`${BSC_TESTNET_CONFIG.explorerUrl}/address/${BSC_TESTNET_SALE_ADDRESS}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[var(--brand-accent)] hover:underline inline-flex items-center gap-1 text-[10px]"
+                  >
+                    <span>BscScan Testnet</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
               </div>
-              <div className="p-3 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-1">
-                <span className="text-muted text-[10px] uppercase font-semibold">Testnet Sale:</span>
-                <div className="text-white break-all">{BSC_TESTNET_SALE_ADDRESS}</div>
-                <a
-                  href={`${BSC_TESTNET_CONFIG.explorerUrl}/address/${BSC_TESTNET_SALE_ADDRESS}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[var(--brand-accent)] hover:underline inline-flex items-center gap-1 text-[10px]"
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => switchToBscTestnet()}
+                  className="btn-metallic px-3.5 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5"
                 >
-                  <span>BscScan Testnet</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
+                  <span>Switch Wallet to BSC Testnet (Chain #97)</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => switchToBscTestnet()}
-                className="btn-metallic px-3.5 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5"
-              >
-                <span>Switch Wallet to BSC Testnet (Chain #97)</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-        )}
-      </Card>
+          )}
+        </Card>
+      )}
 
       {/* Security & Governance Notice */}
       <div className="glass-panel p-6 rounded-2xl border border-[var(--border-prominent)] space-y-3">

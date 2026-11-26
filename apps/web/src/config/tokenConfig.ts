@@ -183,3 +183,35 @@ export function getSaleContractAddress(chainId: number | null): string | null {
   return null;
 }
 
+/**
+ * Determines whether Testnet developer features, sandbox accordions, faucet controls,
+ * Mock USDT, simulated balances, and Testnet swap/liquidity functionality are accessible.
+ *
+ * Strictly excluded on the production website (NODE_ENV === 'production' or production domain).
+ * Preserved in separate development environments (localhost or explicit dev flags).
+ */
+export function isTestnetSandboxEnabled(): boolean {
+  if (process.env.NEXT_PUBLIC_ENABLE_TESTNET_SANDBOX === 'true') {
+    return true;
+  }
+  if (process.env.NODE_ENV === 'production') {
+    return false;
+  }
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'lioracoin.com' || hostname.endsWith('.lioracoin.com')) {
+      return false;
+    }
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.local');
+  }
+  return false;
+}
+
+/**
+ * Validates whether the application is operating in production website mode.
+ */
+export function isProductionWebsite(): boolean {
+  return !isTestnetSandboxEnabled();
+}
+
+

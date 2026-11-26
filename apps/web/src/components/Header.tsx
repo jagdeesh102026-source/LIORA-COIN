@@ -10,6 +10,7 @@ import { useOxeniqContract } from '../hooks/useOxeniqContract';
 import { useTestnetBalances } from '../hooks/useTestnetBalances';
 import { useDemoStore } from '../lib/demo/useDemoStore';
 import { PREVIEW_CONFIG } from '../config/previewConfig';
+import { isTestnetSandboxEnabled } from '../config/tokenConfig';
 import { 
   Menu, 
   X, 
@@ -238,7 +239,7 @@ export const Header: React.FC = () => {
                     <span className="text-white font-bold font-mono">{userBalance ?? '0.00'}</span>
                     <span className="text-[10px] text-amber-300">LIORA (Mainnet)</span>
                   </div>
-                ) : (
+                ) : isTestnetSandboxEnabled() ? (
                   <>
                     <div
                       className="px-2.5 py-1.5 text-xs rounded-xl bg-blue-500/10 border border-blue-500/20 text-white font-semibold flex items-center gap-1.5"
@@ -257,7 +258,7 @@ export const Header: React.FC = () => {
                       <span className="text-[10px] text-emerald-300">mUSDT</span>
                     </div>
                   </>
-                )}
+                ) : null}
               </div>
               <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-[var(--border-prominent)] bg-[var(--bg-elevated)]">
                 <button

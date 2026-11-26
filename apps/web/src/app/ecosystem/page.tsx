@@ -94,32 +94,41 @@ export default function EcosystemPage() {
             </div>
 
             {/* Contract Address Bar if deployed */}
-            {comp.contractAddress && (
-              <div className="p-2.5 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-1">
-                <span className="text-[10px] uppercase font-bold text-muted">Deployed Address (BSC Testnet)</span>
-                <div className="flex items-center justify-between gap-2 font-mono text-[11px] text-white">
-                  <span className="truncate">{comp.contractAddress}</span>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      onClick={() => handleCopy(comp.contractAddress!, comp.id)}
-                      className="p-1 rounded bg-[var(--bg-elevated)] hover:bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-secondary hover:text-white transition-colors cursor-pointer"
-                      title="Copy Address"
-                    >
-                      {copiedId === comp.id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                    </button>
-                    <a
-                      href={`${BSC_TESTNET_CONFIG.explorerUrl}/address/${comp.contractAddress}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="p-1 rounded bg-[var(--bg-elevated)] hover:bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--brand-accent)] transition-colors"
-                      title="View on BscScan"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+            {comp.contractAddress && (() => {
+              const isMainnet = comp.chain.includes('56') || comp.chain.includes('Mainnet');
+              const explorerUrl = comp.category === 'Token' && isMainnet
+                ? `https://bscscan.com/token/${comp.contractAddress}`
+                : `${isMainnet ? 'https://bscscan.com' : BSC_TESTNET_CONFIG.explorerUrl}/address/${comp.contractAddress}`;
+
+              return (
+                <div className="p-2.5 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-muted">
+                    {isMainnet ? 'Official Verified Contract (BSC Mainnet)' : 'Deployed Address (BSC Testnet)'}
+                  </span>
+                  <div className="flex items-center justify-between gap-2 font-mono text-[11px] text-white">
+                    <span className="truncate">{comp.contractAddress}</span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => handleCopy(comp.contractAddress!, comp.id)}
+                        className="p-1 rounded bg-[var(--bg-elevated)] hover:bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-secondary hover:text-white transition-colors cursor-pointer"
+                        title="Copy Address"
+                      >
+                        {copiedId === comp.id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                      </button>
+                      <a
+                        href={explorerUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1 rounded bg-[var(--bg-elevated)] hover:bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--brand-accent)] transition-colors"
+                        title="View on BscScan"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             <div className="pt-4 border-t border-[var(--border-subtle)] space-y-2">
               <span className="text-[11px] uppercase font-bold text-muted tracking-wider">Specifications:</span>

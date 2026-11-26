@@ -117,7 +117,18 @@ export async function verifyAndRecordPayment(
   }
 
   // 5. Verification Logic (Mock Provider for Local Testing / Offline Verification)
-  // In production, this performs JSON-RPC getTransactionReceipt and parses Transfer(address,address,uint256) event
+  // In production, mock and simulated payments are strictly prohibited
+  if (process.env.NODE_ENV === 'production' && (req.isMockTest || req.chainId === ACCEPTED_CHAINS.LOCAL_DEVNET)) {
+    return {
+      isValid: false,
+      status: 'FAILED',
+      txHash: cleanTx,
+      confirmations: 0,
+      blockNumber: null,
+      error: 'MOCK_PAYMENT_PROHIBITED: Simulated/test payments are strictly prohibited in production.',
+    };
+  }
+
   if (req.isMockTest || process.env.NODE_ENV !== 'production' || req.chainId === ACCEPTED_CHAINS.LOCAL_DEVNET) {
     // Check for simulated failure indicators in test transactions
     if (cleanTx.includes('fail') || cleanTx.includes('revert')) {

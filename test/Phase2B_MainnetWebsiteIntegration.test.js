@@ -20,6 +20,8 @@ const {
   getTokenContractAddress,
   isProductionChain,
   isTestnetChain,
+  isTestnetSandboxEnabled,
+  isProductionWebsite,
 } = require("../apps/web/src/config/tokenConfig");
 
 const {
@@ -194,6 +196,43 @@ describe("LIORA — Phase 1 Mainnet Website Integration & Safety Guardrails Suit
       expect(PREVIEW_CONFIG.previewBadgeText).to.include("BSC Mainnet Verified");
       expect(PREVIEW_CONFIG.previewBannerMessage).to.include("BSC MAINNET LIVE");
       expect(PREVIEW_CONFIG.previewBannerMessage).to.include("read-only mode");
+    });
+  });
+
+  // =========================================================================
+  // 5. PRODUCTION ISOLATION INVARIANTS (TESTNET EXCLUSION)
+  // =========================================================================
+  describe("5. Production Isolation Invariants (Testnet Exclusion)", function () {
+    const originalNodeEnv = process.env.NODE_ENV;
+    const originalSandboxFlag = process.env.NEXT_PUBLIC_ENABLE_TESTNET_SANDBOX;
+
+    afterEach(function () {
+      process.env.NODE_ENV = originalNodeEnv;
+      if (originalSandboxFlag !== undefined) {
+        process.env.NEXT_PUBLIC_ENABLE_TESTNET_SANDBOX = originalSandboxFlag;
+      } else {
+        delete process.env.NEXT_PUBLIC_ENABLE_TESTNET_SANDBOX;
+      }
+    });
+
+    it("Should exclude testnet sandbox in production environment", function () {
+      delete process.env.NEXT_PUBLIC_ENABLE_TESTNET_SANDBOX;
+      process.env.NODE_ENV = "production";
+      expect(isTestnetSandboxEnabled()).to.be.false;
+      expect(isProductionWebsite()).to.be.true;
+    });
+
+    it("Should permit testnet sandbox only when explicit development flag is set", function () {
+      process.env.NEXT_PUBLIC_ENABLE_TESTNET_SANDBOX = "true";
+      expect(isTestnetSandboxEnabled()).to.be.true;
+      expect(isProductionWebsite()).to.be.false;
+    });
+
+    it("Should prohibit testnet settlement execution in production mode", function () {
+      process.env.NODE_ENV = "production";
+      const result = SettlementPersistentStore.enforceSandboxRestrictions({ chainId: 97 });
+      expect(result.permitted).to.be.false;
+      expect(result.error).to.include("TESTNET_EXECUTION_PROHIBITED_IN_PRODUCTION");
     });
   });
 });

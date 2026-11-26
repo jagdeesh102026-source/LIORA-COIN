@@ -32,12 +32,16 @@ export async function POST(req: NextRequest) {
     const cleanAddr = address.toLowerCase();
 
     // 0. Chain ID Validation: Restrict to authorized networks
-    if (chainId !== 97 && chainId !== 31337) {
+    const isProd = process.env.NODE_ENV === 'production';
+    const allowedChains = isProd ? [56] : [56, 97, 31337];
+    if (!allowedChains.includes(chainId)) {
       return NextResponse.json(
         {
           success: false,
           error: 'UNSUPPORTED_CHAIN_ID',
-          message: `Network chainId ${chainId} is not authorized for authentication. Authorized: 97 (BSC Testnet), 31337 (Local Devnet).`
+          message: isProd
+            ? `Network chainId ${chainId} is not authorized in production. Authorized: 56 (BNB Smart Chain Mainnet).`
+            : `Network chainId ${chainId} is not authorized for authentication. Authorized: 56 (BSC Mainnet), 97 (BSC Testnet), 31337 (Local Devnet).`
         },
         { status: 400 }
       );

@@ -15,8 +15,10 @@ import {
   Info, 
   ChevronDown, 
   Zap, 
-  RefreshCw 
+  RefreshCw,
+  Lock
 } from 'lucide-react';
+import { isTestnetSandboxEnabled } from '../../config/tokenConfig';
 
 interface MobniqExchangeCardProps {
   className?: string;
@@ -31,6 +33,7 @@ export const MobniqExchangeCard: React.FC<MobniqExchangeCardProps> = ({
   defaultTo = 'LIORA',
   compact = false,
 }) => {
+  const isDev = isTestnetSandboxEnabled();
   const { tokens, calculateQuote, executeSwap } = useDemoStore();
 
   const [fromSymbol, setFromSymbol] = useState<TokenSymbol>(defaultFrom);
@@ -342,7 +345,15 @@ export const MobniqExchangeCard: React.FC<MobniqExchangeCardProps> = ({
 
       {/* PRIMARY ACTION CTA */}
       <div className="mt-2">
-        {isInputZeroOrEmpty ? (
+        {!isDev ? (
+          <button
+            disabled
+            className="w-full py-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-secondary font-bold text-sm cursor-not-allowed opacity-80 flex items-center justify-center gap-2"
+          >
+            <Lock className="w-4 h-4 text-emerald-400" />
+            <span>DEX Trading Staged (Mainnet Read-Only)</span>
+          </button>
+        ) : isInputZeroOrEmpty ? (
           <button
             disabled
             className="w-full py-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-secondary font-bold text-sm cursor-not-allowed opacity-60"
@@ -368,16 +379,29 @@ export const MobniqExchangeCard: React.FC<MobniqExchangeCardProps> = ({
       </div>
 
       {/* Trust & Non-Custodial Footer */}
-      <div className="mt-4 flex items-center justify-center gap-4 text-[11px] text-secondary">
-        <span className="flex items-center gap-1">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-          Non-Custodial
-        </span>
-        <span>•</span>
-        <span>PancakeSwap v3 Router</span>
-        <span>•</span>
-        <span className="text-amber-400">Simulated Demo</span>
-      </div>
+      {!isDev ? (
+        <div className="mt-4 flex items-center justify-center gap-4 text-[11px] text-secondary">
+          <span className="flex items-center gap-1">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            BSC Mainnet #56
+          </span>
+          <span>•</span>
+          <span>Verified Contracts</span>
+          <span>•</span>
+          <span className="text-emerald-400">Read-Only Stage</span>
+        </div>
+      ) : (
+        <div className="mt-4 flex items-center justify-center gap-4 text-[11px] text-secondary">
+          <span className="flex items-center gap-1">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            Non-Custodial
+          </span>
+          <span>•</span>
+          <span>PancakeSwap v3 Router</span>
+          <span>•</span>
+          <span className="text-amber-400">Simulated Demo</span>
+        </div>
+      )}
 
       {/* Modals */}
       <TokenSelectorModal
