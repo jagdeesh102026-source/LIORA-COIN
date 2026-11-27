@@ -10,6 +10,8 @@
     "test:coverage": "hardhat coverage",
     "deploy:local": "hardhat run scripts/deploy.js --network localhost",
     "deploy:bscTestnet": "hardhat run scripts/deploy.js --network bscTestnet",
+    "prisma:generate": "node scripts/generate-prisma.js",
+    "postinstall": "node scripts/generate-prisma.js",
     "build:web": "npm --prefix apps/web run build"
   },
   "devDependencies": {

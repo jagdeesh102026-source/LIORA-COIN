@@ -191,9 +191,7 @@ export function getSaleContractAddress(chainId: number | null): string | null {
  * Preserved in separate development environments (localhost or explicit dev flags).
  */
 export function isTestnetSandboxEnabled(): boolean {
-  if (process.env.NEXT_PUBLIC_ENABLE_TESTNET_SANDBOX === 'true') {
-    return true;
-  }
+  // Production restriction cannot be overridden by client or environment flags.
   if (process.env.NODE_ENV === 'production') {
     return false;
   }
@@ -202,9 +200,12 @@ export function isTestnetSandboxEnabled(): boolean {
     if (hostname === 'lioracoin.com' || hostname.endsWith('.lioracoin.com')) {
       return false;
     }
+    if (process.env.NEXT_PUBLIC_ENABLE_TESTNET_SANDBOX === 'true') {
+      return true;
+    }
     return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.local');
   }
-  return false;
+  return process.env.NEXT_PUBLIC_ENABLE_TESTNET_SANDBOX === 'true';
 }
 
 /**

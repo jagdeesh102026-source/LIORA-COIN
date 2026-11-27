@@ -57,10 +57,14 @@ function getDatabaseUrl(): string {
   }
 
   const url = process.env.DATABASE_URL;
-  if (!url) {
-    throw new Error('DATABASE_URL environment variable is not defined.');
+  if (!url || !url.trim()) {
+    throw new Error('DATABASE_CONFIGURATION_ERROR: DATABASE_URL environment variable is not defined.');
   }
-  return url;
+  const cleanUrl = url.trim();
+  if (!/^postgres(ql)?:\/\/.+/i.test(cleanUrl)) {
+    throw new Error('DATABASE_CONFIGURATION_ERROR: DATABASE_URL must be a valid postgresql:// or postgres:// connection string.');
+  }
+  return cleanUrl;
 }
 
 const globalForPrisma = globalThis as unknown as {

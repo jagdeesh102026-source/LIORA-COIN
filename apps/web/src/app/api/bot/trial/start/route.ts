@@ -2,14 +2,31 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverDb } from '@/lib/server/db';
 import { getTradingBotAccess } from '@/lib/server/entitlementService';
+import { getAuthenticatedUser, validateCsrfProtection } from '@/lib/server/adminAuth';
 
 const startTrialSchema = z.object({
-  userId: z.string().optional().default('usr_alex_001'),
+  userId: z.string().optional(),
   walletAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid wallet address format'),
 });
 
 export async function POST(req: NextRequest) {
   try {
+    const csrfCheck = validateCsrfProtection(req);
+    if (!csrfCheck.valid) {
+      return NextResponse.json(
+        { error: 'CSRF_REJECTED', message: csrfCheck.reason },
+        { status: 403 }
+      );
+    }
+
+    const auth = await getAuthenticatedUser(req);
+    if (!auth) {
+      return NextResponse.json(
+        { error: 'UNAUTHORIZED', message: 'Authentication required to activate a trading bot trial.' },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const parsed = startTrialSchema.safeParse(body);
 
@@ -20,14 +37,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { userId, walletAddress } = parsed.data;
-    const cleanAddr = walletAddress.toLowerCase();
-
-    // 1. Verify User exists and is active
-    const user = await serverDb.findUserById(userId);
-    if (!user) {
-      return NextResponse.json({ error: `User account ${userId} not found` }, { status: 404 });
+    const { userId: requestedUserId, walletAddress } = parsed.data;
+    if (requestedUserId && requestedUserId !== auth.user.id && auth.user.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'FORBIDDEN_IDENTITY_SPOOFING', message: 'Cannot activate trials on behalf of another user account.' },
+        { status: 403 }
+      );
     }
+
+    const user = auth.user;
+    const cleanAddr = walletAddress.toLowerCase();
 
     if (user.accountStatus !== 'ACTIVE') {
       return NextResponse.json(
@@ -70,10 +89,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. Ensure wallet is registered/verified
+    // 4. Verify wallet ownership (do not allow claiming wallets linked to other users; require verified wallet in production)
     const verifiedWallet = await serverDb.getVerifiedWallet(cleanAddr);
+    if (verifiedWallet && verifiedWallet.userId !== user.id) {
+      return NextResponse.json(
+        {
+          error: 'WALLET_OWNERSHIP_CONFLICT',
+          message: 'This wallet address is already linked to a different user account.',
+        },
+        { status: 403 }
+      );
+    }
+
     if (!verifiedWallet) {
-      // Auto-link for convenience if in demo mode, but record audit note
+      if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json(
+          {
+            error: 'WALLET_NOT_VERIFIED',
+            message: 'Please cryptographically verify wallet ownership via signature challenge before activating a trial.',
+          },
+          { status: 403 }
+        );
+      }
+
+      // Isolated local dev/test convenience binding only (non-production)
       await serverDb.linkVerifiedWallet({
         walletAddress: cleanAddr,
         userId: user.id,

@@ -1,22 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverDb } from '@/lib/server/db';
-import { verifyAndRecordPayment, OFFICIAL_TREASURY_ADDRESS } from '@/lib/server/paymentVerification';
+import {
+  verifyAndRecordPayment,
+  OFFICIAL_TREASURY_ADDRESS,
+  TOKEN_CONTRACTS,
+} from '@/lib/server/paymentVerification';
 import { getTradingBotAccess } from '@/lib/server/entitlementService';
-import { getSessionTokenFromRequest } from '@/lib/server/adminAuth';
+import { validateCsrfProtection, getAuthenticatedUser } from '@/lib/server/adminAuth';
+
+const isProdEnv = process.env.NODE_ENV === 'production' || process.env.OXENIQ_ENV === 'production';
 
 const subscribeSchema = z.object({
-  userId: z.string().optional().default('usr_alex_001'),
+  userId: z.string().min(1).optional(),
   planId: z.enum(['PLAN_MONTHLY', 'PLAN_QUARTERLY', 'PLAN_ANNUAL']),
   paymentToken: z.enum(['USDT', 'LIORA']),
   payingWallet: z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid wallet address format'),
   txHash: z.string().min(10, 'Transaction hash required'),
-  chainId: z.number().int().optional().default(97),
+  chainId: z.number().int().optional().default(isProdEnv ? 56 : 97),
   isMockTest: z.boolean().optional().default(false),
 });
 
 export async function POST(req: NextRequest) {
   try {
+    const csrfCheck = validateCsrfProtection(req);
+    if (!csrfCheck.valid) {
+      return NextResponse.json(
+        { error: 'CSRF_REJECTED', message: csrfCheck.reason },
+        { status: 403 }
+      );
+    }
+
+    const auth = await getAuthenticatedUser(req);
+    if (!auth) {
+      return NextResponse.json(
+        { error: 'UNAUTHORIZED', message: 'Authentication session required for subscription activation.' },
+        { status: 401 }
+      );
+    }
+
+    if (process.env.NODE_ENV === 'production' || process.env.OXENIQ_ENV === 'production') {
+      return NextResponse.json(
+        {
+          error: 'SUBSCRIPTION_PAYMENT_DISABLED',
+          message: 'Live subscription payments are disabled in production.',
+        },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const parsed = subscribeSchema.safeParse(body);
 
@@ -29,23 +61,16 @@ export async function POST(req: NextRequest) {
 
     const { userId, planId, paymentToken, payingWallet, txHash, chainId, isMockTest } = parsed.data;
 
-    // Resolve user: prioritize active authenticated session over client-supplied userId
-    const sessionToken = getSessionTokenFromRequest(req);
-    let effectiveUserId = userId;
-    if (sessionToken) {
-      const session = await serverDb.getSession(sessionToken);
-      if (session) {
-        effectiveUserId = session.userId;
-      }
+    if (userId && userId !== auth.user.id) {
+      return NextResponse.json(
+        { error: 'FORBIDDEN_IDENTITY_SPOOFING', message: 'Cannot activate subscription for another user.' },
+        { status: 403 }
+      );
     }
 
-    // 1. Verify User
-    const user = await serverDb.findUserById(effectiveUserId);
-    if (!user) {
-      return NextResponse.json({ error: `User account ${effectiveUserId} not found` }, { status: 404 });
-    }
+    const user = auth.user;
 
-    // 2. Fetch Plan
+    // Verify Plan
     const plan = await serverDb.getPlanById(planId);
     if (!plan || !plan.isActive) {
       return NextResponse.json({ error: `Subscription plan ${planId} is invalid or inactive` }, { status: 400 });
@@ -54,8 +79,8 @@ export async function POST(req: NextRequest) {
     const expectedAmount = paymentToken === 'USDT' ? plan.priceUsdt : plan.priceLiora;
     const tokenAddress =
       paymentToken === 'USDT'
-        ? '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd'
-        : '0xF30B72d8291f09c64B749a2631557d197Ce94a3D';
+        ? TOKEN_CONTRACTS.USDT_TESTNET
+        : TOKEN_CONTRACTS.LIORA_TESTNET;
 
     // 3. Payment Verification via Read-Only Payment Engine
     const paymentResult = await verifyAndRecordPayment({

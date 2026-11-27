@@ -10,6 +10,11 @@
  */
 
 import { serverDb, PaymentStatus, PaymentToken } from './db';
+import {
+  BSC_MAINNET_OPERATING_TREASURY_ADDRESS,
+  BSC_TESTNET_LIORA_TOKEN_ADDRESS,
+  BSC_TESTNET_MOCK_USDT_ADDRESS,
+} from '../../config/tokenConfig';
 
 export const ACCEPTED_CHAINS = {
   BSC_MAINNET: 56,
@@ -18,15 +23,15 @@ export const ACCEPTED_CHAINS = {
 };
 
 export const TOKEN_CONTRACTS = {
-  // BSC Testnet
-  USDT_TESTNET: '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd'.toLowerCase(),
-  LIORA_TESTNET: '0xF30B72d8291f09c64B749a2631557d197Ce94a3D'.toLowerCase(),
+  // BSC Testnet (Verified UUPS & MockUSDT Sandbox Deployments)
+  USDT_TESTNET: BSC_TESTNET_MOCK_USDT_ADDRESS.toLowerCase(),
+  LIORA_TESTNET: BSC_TESTNET_LIORA_TOKEN_ADDRESS.toLowerCase(),
   // BSC Mainnet (Read-only reference)
   USDT_MAINNET: '0x55d398326f99059fF775485246999027B3197955'.toLowerCase(),
 };
 
-// Official Demo/Test Treasury Address
-export const OFFICIAL_TREASURY_ADDRESS = '0x1111111111111111111111111111111111111111'.toLowerCase();
+// Canonical Company Operating Treasury Address (sourced from tokenConfig)
+export const OFFICIAL_TREASURY_ADDRESS = BSC_MAINNET_OPERATING_TREASURY_ADDRESS.toLowerCase();
 
 export interface PaymentVerificationRequest {
   txHash: string;
@@ -55,6 +60,19 @@ export async function verifyAndRecordPayment(
   req: PaymentVerificationRequest
 ): Promise<PaymentVerificationResult> {
   const cleanTx = req.txHash.trim().toLowerCase();
+  const isProd = process.env.NODE_ENV === 'production' || process.env.OXENIQ_ENV === 'production';
+
+  // Fail closed in production: real-money payment processing & sandbox simulations are disabled
+  if (isProd) {
+    return {
+      isValid: false,
+      status: 'FAILED',
+      txHash: cleanTx,
+      confirmations: 0,
+      blockNumber: null,
+      error: 'PAYMENT_EXECUTION_DISABLED: Real-money payment verification and test payment simulations are disabled in production.',
+    };
+  }
 
   // 1. Idempotency Check: Reject already processed transaction hash
   const existing = await serverDb.getPaymentByTxHash(cleanTx);
@@ -117,19 +135,8 @@ export async function verifyAndRecordPayment(
   }
 
   // 5. Verification Logic (Mock Provider for Local Testing / Offline Verification)
-  // In production, mock and simulated payments are strictly prohibited
-  if (process.env.NODE_ENV === 'production' && (req.isMockTest || req.chainId === ACCEPTED_CHAINS.LOCAL_DEVNET)) {
-    return {
-      isValid: false,
-      status: 'FAILED',
-      txHash: cleanTx,
-      confirmations: 0,
-      blockNumber: null,
-      error: 'MOCK_PAYMENT_PROHIBITED: Simulated/test payments are strictly prohibited in production.',
-    };
-  }
-
-  if (req.isMockTest || process.env.NODE_ENV !== 'production' || req.chainId === ACCEPTED_CHAINS.LOCAL_DEVNET) {
+  // In production, mock and simulated payments are strictly prohibited (enforced above)
+  if (!isProd && (req.isMockTest || req.chainId === ACCEPTED_CHAINS.LOCAL_DEVNET || req.chainId === ACCEPTED_CHAINS.BSC_TESTNET)) {
     // Check for simulated failure indicators in test transactions
     if (cleanTx.includes('fail') || cleanTx.includes('revert')) {
       return {

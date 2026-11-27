@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { serverDb } from '@/lib/server/db';
 import {
   verifyAdminCredentialsDetailed,
+  validateCsrfProtection,
+  getSessionCookieOptions,
   SESSION_COOKIE_NAME,
   LEGACY_SESSION_COOKIE_NAME
 } from '@/lib/server/adminAuth';
@@ -15,6 +17,14 @@ const adminLoginSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    const csrfCheck = validateCsrfProtection(req);
+    if (!csrfCheck.valid) {
+      return NextResponse.json(
+        { success: false, error: 'CSRF_REJECTED', message: csrfCheck.reason },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const parsed = adminLoginSchema.safeParse(body);
 
@@ -121,13 +131,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Set secure HttpOnly cookies
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax' as const,
-      path: '/',
-      maxAge: 12 * 3600 // 12 hours
-    };
+    const cookieOptions = getSessionCookieOptions(12 * 3600);
 
     response.cookies.set(SESSION_COOKIE_NAME, session.sessionIdentifier, cookieOptions);
     response.cookies.set(LEGACY_SESSION_COOKIE_NAME, session.sessionIdentifier, cookieOptions);

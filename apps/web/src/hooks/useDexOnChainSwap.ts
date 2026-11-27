@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { encodeFunctionData, parseUnits, getAddress, type Address } from 'viem';
 import { useWeb3Wallet } from './useWeb3Wallet';
+import { isTestnetSandboxEnabled } from '../config/tokenConfig';
 import {
   resolveEip1193Provider,
   validateProviderForBscTestnet,
@@ -246,6 +247,11 @@ export function useDexOnChainSwap(): UseDexOnChainSwapReturn {
   const approveToken = useCallback(async (): Promise<boolean> => {
     clearErrors();
 
+    if (!isTestnetSandboxEnabled()) {
+      setApprovalError('Testnet swap approvals are disabled in production.');
+      return false;
+    }
+
     const provider = resolveEip1193Provider(activeProvider);
     if (!provider) {
       setApprovalError('No compatible Web3 browser wallet detected.');
@@ -367,6 +373,11 @@ export function useDexOnChainSwap(): UseDexOnChainSwapReturn {
   // Execute Swap
   const executeSwap = useCallback(async (): Promise<boolean> => {
     clearErrors();
+
+    if (!isTestnetSandboxEnabled()) {
+      setSwapError('Testnet DEX swap execution is disabled in production.');
+      return false;
+    }
 
     const provider = resolveEip1193Provider(activeProvider);
     if (!provider) {

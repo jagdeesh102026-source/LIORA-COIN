@@ -1,26 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTradingBotAccess } from '@/lib/server/entitlementService';
 import { serverDb } from '@/lib/server/db';
+import { getAuthenticatedUser } from '@/lib/server/adminAuth';
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await getAuthenticatedUser(req);
+    if (!auth) {
+      return NextResponse.json(
+        { error: 'UNAUTHORIZED', message: 'Authentication session required to inspect subscription status.' },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
-    const sessionCookie = req.cookies.get('liora_bot_session')?.value;
-    let userId = searchParams.get('userId');
+    const requestedUserId = searchParams.get('userId');
     const walletAddress = searchParams.get('walletAddress');
 
-    // If session cookie is provided, resolve userId from session
-    if (sessionCookie) {
-      const session = await serverDb.getSession(sessionCookie);
-      if (session) {
-        userId = session.userId;
-      }
+    if (requestedUserId && requestedUserId !== auth.user.id && auth.user.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'FORBIDDEN_IDENTITY_SPOOFING', message: 'Cannot inspect subscription status for another user.' },
+        { status: 403 }
+      );
     }
 
-    // Fallback to default demo user if unauthenticated demo visit
-    if (!userId) {
-      userId = 'usr_alex_001';
-    }
+    const userId = requestedUserId && auth.user.role === 'ADMIN' ? requestedUserId : auth.user.id;
 
     const access = await getTradingBotAccess(userId, walletAddress);
     const trialRecord = await serverDb.getTrialByUserId(userId);

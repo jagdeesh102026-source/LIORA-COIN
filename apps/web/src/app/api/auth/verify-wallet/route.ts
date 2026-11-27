@@ -3,21 +3,32 @@ import { z } from 'zod';
 import { verifyMessage } from 'viem';
 import { serverDb } from '@/lib/server/db';
 import {
+  validateCsrfProtection,
   getSessionTokenFromRequest,
+  getSessionCookieOptions,
   SESSION_COOKIE_NAME,
   LEGACY_SESSION_COOKIE_NAME
 } from '@/lib/server/adminAuth';
 
+const isProduction = process.env.NODE_ENV === 'production';
 const verifyWalletSchema = z.object({
   address: z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid wallet address format'),
   signature: z.string().min(10, 'Signature is required'),
   nonce: z.string().min(8, 'Nonce is required'),
   message: z.string().min(10, 'Challenge message is required'),
-  chainId: z.number().int().positive().optional().default(97)
+  chainId: z.number().int().positive().optional().default(isProduction ? 56 : 97)
 });
 
 export async function POST(req: NextRequest) {
   try {
+    const csrfCheck = validateCsrfProtection(req);
+    if (!csrfCheck.valid) {
+      return NextResponse.json(
+        { success: false, error: 'CSRF_REJECTED', message: csrfCheck.reason },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const parsed = verifyWalletSchema.safeParse(body);
 
@@ -143,6 +154,34 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    if (resolvedUser.accountStatus !== 'ACTIVE') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'ACCOUNT_INACTIVE',
+          message: `Account is ${resolvedUser.accountStatus.toLowerCase()} and cannot authenticate.`,
+        },
+        { status: 403 }
+      );
+    }
+
+    const isProdOrStaging =
+      process.env.NODE_ENV === 'production' ||
+      process.env.STAGING === 'true' ||
+      process.env.OXENIQ_ENV === 'production' ||
+      process.env.OXENIQ_ENV === 'staging';
+
+    if (resolvedUser.isDevelopmentOnly && isProdOrStaging) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'DEVELOPMENT_ACCOUNT_PROHIBITED',
+          message: 'Development-only accounts are disabled in production.',
+        },
+        { status: 403 }
+      );
+    }
+
     // 5. Link Verified Wallet Record
     let verifiedWallet;
     try {
@@ -199,13 +238,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Set secure HttpOnly cookies (both primary and legacy for backwards compatibility)
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax' as const,
-      path: '/',
-      maxAge: 24 * 3600
-    };
+    const cookieOptions = getSessionCookieOptions(24 * 3600);
 
     response.cookies.set(SESSION_COOKIE_NAME, session.sessionIdentifier, cookieOptions);
     response.cookies.set(LEGACY_SESSION_COOKIE_NAME, session.sessionIdentifier, cookieOptions);

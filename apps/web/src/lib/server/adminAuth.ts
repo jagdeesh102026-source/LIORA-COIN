@@ -111,38 +111,62 @@ export function validateCsrfProtection(req: NextRequest): { valid: boolean; reas
     return { valid: true };
   }
 
-  // If request contains an explicit Bearer Authorization header, standard CSRF does not apply
-  const authHeader = req.headers.get('authorization');
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    return { valid: true };
-  }
-
-  // Custom anti-CSRF request header check (common for AJAX/fetch calls)
-  const customHeader =
-    req.headers.get('x-requested-with') ||
-    req.headers.get('x-csrf-token') ||
-    req.headers.get('x-liora-admin');
-  if (customHeader) {
-    return { valid: true };
-  }
-
-  // Origin / Host verification
   const origin = req.headers.get('origin');
+  const referer = req.headers.get('referer');
   const host = req.headers.get('host');
 
-  if (origin && host) {
+  // Always enforce Origin / Host match first if Origin header is present
+  let verifiedSameOrigin = false;
+  if (origin) {
+    if (!host) {
+      return { valid: false, reason: 'CSRF validation failed: Missing Host header for Origin check.' };
+    }
     try {
-      const originHost = new URL(origin).host;
-      if (originHost.toLowerCase() === host.toLowerCase()) {
-        return { valid: true };
+      const originHost = new URL(origin).host.toLowerCase();
+      if (originHost !== host.toLowerCase()) {
+        return { valid: false, reason: 'CSRF validation failed: Cross-origin request rejected.' };
       }
+      verifiedSameOrigin = true;
     } catch {
-      return { valid: false, reason: 'Malformed request origin' };
+      return { valid: false, reason: 'CSRF validation failed: Malformed request origin.' };
+    }
+  } else if (referer && host) {
+    try {
+      const refererHost = new URL(referer).host.toLowerCase();
+      if (refererHost !== host.toLowerCase()) {
+        return { valid: false, reason: 'CSRF validation failed: Cross-site Referer rejected.' };
+      }
+      verifiedSameOrigin = true;
+    } catch {
+      return { valid: false, reason: 'CSRF validation failed: Malformed Referer header.' };
     }
   }
 
-  // Allow in non-production local development if Origin is omitted
-  if (process.env.NODE_ENV !== 'production' && !origin) {
+  // Explicit high-entropy Bearer token requests bypass cookie CSRF
+  const authHeader = req.headers.get('authorization');
+  if (authHeader && authHeader.startsWith('Bearer ') && authHeader.slice(7).trim().length >= 16) {
+    return { valid: true };
+  }
+
+  // Strict custom anti-CSRF headers (only valid when origin did not mismatch above)
+  const requestedWith = req.headers.get('x-requested-with');
+  const csrfToken = req.headers.get('x-csrf-token');
+  const adminHeader = req.headers.get('x-liora-admin');
+  if (
+    (requestedWith && requestedWith.trim().toLowerCase() === 'xmlhttprequest') ||
+    (csrfToken && csrfToken.trim().length >= 8) ||
+    adminHeader === '1' ||
+    adminHeader === 'true'
+  ) {
+    return { valid: true };
+  }
+
+  if (verifiedSameOrigin) {
+    return { valid: true };
+  }
+
+  // Allow in non-production local development/unit tests only when Origin & Referer are omitted
+  if (process.env.NODE_ENV !== 'production' && !origin && !referer) {
     return { valid: true };
   }
 
@@ -153,10 +177,24 @@ export function validateCsrfProtection(req: NextRequest): { valid: boolean; reas
 }
 
 // ============================================================================
-// CRYPTOGRAPHIC PASSWORD HASHING (SCRYPT + SALT)
+// CRYPTOGRAPHIC PASSWORD HASHING (SCRYPT + SALT) & SECURE COOKIES
 // ============================================================================
 
+export function getSessionCookieOptions(maxAgeSeconds: number) {
+  const isProd = process.env.NODE_ENV === 'production' || process.env.OXENIQ_ENV === 'production';
+  return {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: 'lax' as const,
+    path: '/',
+    maxAge: maxAgeSeconds,
+  };
+}
+
 export function hashPassword(password: string): string {
+  if (!password || typeof password !== 'string') {
+    throw new Error('Password is required for hashing.');
+  }
   const salt = crypto.randomBytes(16).toString('hex');
   const derivedKey = crypto.scryptSync(password, salt, 64).toString('hex');
   return `scrypt:${salt}:${derivedKey}`;
@@ -174,19 +212,24 @@ export function timingSafeCompare(a: string, b: string): boolean {
 }
 
 export function verifyPassword(password: string, storedHash: string): boolean {
-  if (!password || !storedHash) return false;
-
-  if (storedHash.startsWith('scrypt:')) {
-    const parts = storedHash.split(':');
-    if (parts.length !== 3) return false;
-    const salt = parts[1];
-    const expectedHash = parts[2];
-    const derived = crypto.scryptSync(password, salt, 64).toString('hex');
-    return timingSafeCompare(derived, expectedHash);
+  if (!password || !storedHash || typeof password !== 'string' || typeof storedHash !== 'string') {
+    return false;
   }
 
-  // Fallback for environment secret comparison
-  return timingSafeCompare(password, storedHash);
+  if (!storedHash.startsWith('scrypt:')) {
+    // Plaintext password fallback is permanently disabled
+    return false;
+  }
+
+  const parts = storedHash.split(':');
+  if (parts.length !== 3) return false;
+  const [, salt, expectedHash] = parts;
+  if (!/^[a-f0-9]{32}$/i.test(salt) || !/^[a-f0-9]{128}$/i.test(expectedHash)) {
+    return false;
+  }
+
+  const derived = crypto.scryptSync(password, salt, 64).toString('hex');
+  return timingSafeCompare(derived, expectedHash.toLowerCase());
 }
 
 // ============================================================================
@@ -263,7 +306,7 @@ export async function requireAdmin(req: NextRequest): Promise<AdminAuthResult> {
     };
   }
 
-  // Reject header tampering attempts
+  // Reject header tampering attempts immediately
   const forgedHeader = req.headers.get('x-admin-role') || req.headers.get('x-admin-id');
   if (forgedHeader) {
     await serverDb.createAuditLog({
@@ -276,6 +319,19 @@ export async function requireAdmin(req: NextRequest): Promise<AdminAuthResult> {
         ip: req.headers.get('x-forwarded-for') || 'unknown'
       }
     });
+    return {
+      authorized: false,
+      user: null,
+      session: null,
+      response: NextResponse.json(
+        {
+          success: false,
+          error: 'FORBIDDEN_HEADER_TAMPERING',
+          message: 'Forged administrative identity headers are strictly prohibited.'
+        },
+        { status: 403 }
+      )
+    };
   }
 
   const auth = await getAuthenticatedUser(req);
@@ -383,7 +439,7 @@ export async function verifyAdminCredentialsDetailed(
   }
 
   // Reject permanently banned default development passcodes
-  if (cleanSecret === 'admin123' || cleanSecret.toLowerCase() === 'oxeniq') {
+  if (cleanSecret === 'admin123' || cleanSecret.toLowerCase() === 'oxeniq' || cleanSecret.toLowerCase() === 'oxeniqdemo2026!') {
     recordFailedLoginAttempt(rateLimitKey);
     return { user: null, error: 'INVALID_CREDENTIALS' };
   }
@@ -396,6 +452,11 @@ export async function verifyAdminCredentialsDetailed(
   if (!user || user.role !== 'ADMIN' || user.accountStatus !== 'ACTIVE') {
     recordFailedLoginAttempt(rateLimitKey);
     return { user: null, error: 'INVALID_CREDENTIALS' };
+  }
+
+  if (user.lockedUntil && new Date(user.lockedUntil).getTime() > Date.now()) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((new Date(user.lockedUntil).getTime() - Date.now()) / 1000));
+    return { user: null, error: 'RATE_LIMIT_EXCEEDED', retryAfterSeconds };
   }
 
   // Production Gate: Development-only accounts CANNOT authenticate in production or staging
@@ -418,9 +479,13 @@ export async function verifyAdminCredentialsDetailed(
     }
   }
 
-  // Verify password using scrypt hash or server ADMIN_SECRET environment override
+  // Verify password strictly via scrypt hash, or high-entropy server ADMIN_SECRET env variable
   const serverAdminSecret = process.env.ADMIN_SECRET || process.env.ADMIN_CONSOLE_PASSWORD;
-  const isMatchServerSecret = serverAdminSecret ? timingSafeCompare(cleanSecret, serverAdminSecret) : false;
+  const isMatchServerSecret = serverAdminSecret
+    ? serverAdminSecret.startsWith('scrypt:')
+      ? verifyPassword(cleanSecret, serverAdminSecret)
+      : serverAdminSecret.length >= 12 && timingSafeCompare(cleanSecret, serverAdminSecret)
+    : false;
   const isMatchUserPassword = user.passwordHash ? verifyPassword(cleanSecret, user.passwordHash) : false;
 
   if (!isMatchServerSecret && !isMatchUserPassword) {

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { CustodialAllocationLedger } from '@/lib/custody/custodialAllocationLedger';
 import { requireSettlementInvestor } from '@/lib/server/settlement/settlementAuth';
 import { SettlementPersistentStore } from '@/lib/server/settlement/settlementPersistentStore';
-import { getAuthenticatedUser } from '@/lib/server/adminAuth';
+import { getAuthenticatedUser, validateCsrfProtection } from '@/lib/server/adminAuth';
 import { serverDb } from '@/lib/server/db';
 import { LioraPricingScheduleService } from '@/lib/pricing/lioraPricingSchedule';
 
@@ -34,6 +34,22 @@ const createIntentSchema = z.object({
  */
 export async function POST(req: NextRequest) {
   try {
+    const csrfCheck = validateCsrfProtection(req);
+    if (!csrfCheck.valid) {
+      return NextResponse.json({ success: false, error: 'CSRF_REJECTED', message: csrfCheck.reason }, { status: 403 });
+    }
+
+    if (process.env.NODE_ENV === 'production' || process.env.OXENIQ_ENV === 'production') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'PAYMENT_EXECUTION_DISABLED',
+          message: 'Manual payment intent submission is disabled in production.',
+        },
+        { status: 403 }
+      );
+    }
+
     const chainIdHeader = req.headers.get('x-chain-id');
     const chainId = chainIdHeader ? parseInt(chainIdHeader, 10) : undefined;
     const sandboxCheck = SettlementPersistentStore.enforceSandboxRestrictions({ chainId });

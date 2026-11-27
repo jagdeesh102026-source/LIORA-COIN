@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { SettlementPersistentStore } from '@/lib/server/settlement/settlementPersistentStore';
 import { requireSettlementInvestor, requireSettlementAdmin } from '@/lib/server/settlement/settlementAuth';
+import { validateCsrfProtection } from '@/lib/server/adminAuth';
 
 const disputeSchema = z.object({
   investmentId: z.string().min(3),
@@ -16,6 +17,18 @@ const resolveDisputeSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    const csrfCheck = validateCsrfProtection(req);
+    if (!csrfCheck.valid) {
+      return NextResponse.json({ success: false, error: 'CSRF_REJECTED', message: csrfCheck.reason }, { status: 403 });
+    }
+
+    if (process.env.NODE_ENV === 'production' || process.env.OXENIQ_ENV === 'production') {
+      return NextResponse.json(
+        { success: false, error: 'SETTLEMENT_EXECUTION_DISABLED', message: 'Settlement mutations are disabled in production.' },
+        { status: 403 }
+      );
+    }
+
     const chainIdHeader = req.headers.get('x-chain-id');
     const chainId = chainIdHeader ? parseInt(chainIdHeader, 10) : undefined;
     const sandboxCheck = SettlementPersistentStore.enforceSandboxRestrictions({ chainId });
@@ -67,6 +80,18 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
+    const csrfCheck = validateCsrfProtection(req);
+    if (!csrfCheck.valid) {
+      return NextResponse.json({ success: false, error: 'CSRF_REJECTED', message: csrfCheck.reason }, { status: 403 });
+    }
+
+    if (process.env.NODE_ENV === 'production' || process.env.OXENIQ_ENV === 'production') {
+      return NextResponse.json(
+        { success: false, error: 'SETTLEMENT_EXECUTION_DISABLED', message: 'Settlement arbitration mutations are disabled in production.' },
+        { status: 403 }
+      );
+    }
+
     const chainIdHeader = req.headers.get('x-chain-id');
     const chainId = chainIdHeader ? parseInt(chainIdHeader, 10) : undefined;
     const sandboxCheck = SettlementPersistentStore.enforceSandboxRestrictions({ chainId });

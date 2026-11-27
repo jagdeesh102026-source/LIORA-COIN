@@ -17,12 +17,12 @@ export function useTradingBot() {
   const { activeUser } = useDemoStore();
   const { address, chainId, signMessage } = useWeb3Wallet();
 
-  const activeUserId = activeUser?.id || 'usr_alex_001';
+  const activeUserId = activeUser?.id || '';
   const activeWallet = activeUser?.walletAddress || address;
 
   // Local state mirrored from botStore
   const [subscription, setSubscription] = useState<UserBotSubscription>(() =>
-    botStore.getSubscription(activeUserId, activeWallet)
+    botStore.getSubscription(activeUserId || 'guest', activeWallet)
   );
 
   const [signals, setSignals] = useState<BotSignal[]>(() => botStore.getSignals());
@@ -33,10 +33,17 @@ export function useTradingBot() {
   const [backendLoading, setBackendLoading] = useState<boolean>(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  // Synchronize with server-authoritative API
+  // Synchronize with server-authoritative API (only when authenticated session user exists)
   const syncWithBackend = useCallback(async () => {
+    if (!activeUserId) {
+      setBackendVerified(false);
+      return;
+    }
     try {
-      const res = await fetch(`/api/bot/subscription/status?userId=${encodeURIComponent(activeUserId)}&walletAddress=${encodeURIComponent(activeWallet || '')}`);
+      const res = await fetch(
+        `/api/bot/subscription/status?walletAddress=${encodeURIComponent(activeWallet || '')}`,
+        { credentials: 'include' }
+      );
       if (res.ok) {
         const data = await res.json();
         if (data.access) {
@@ -107,26 +114,25 @@ export function useTradingBot() {
       }
 
       // 2. Format EIP-4361 SIWE challenge message
-      const challengeMsg = `liora.exchange wants you to sign in with your Ethereum account:\n${activeWallet}\n\nSign in to Liora Coin Trading Bot\n\nURI: http://localhost:3000\nVersion: 1\nChain ID: ${chainId || 97}\nNonce: ${nonceData.nonce}\nIssued At: ${nonceData.issuedAt}`;
+      const challengeMsg = `lioracoin.com wants you to sign in with your Ethereum account:\n${activeWallet}\n\nSign in to Liora Coin Trading Bot\n\nURI: ${typeof window !== 'undefined' ? window.location.origin : 'https://lioracoin.com'}\nVersion: 1\nChain ID: ${chainId || 56}\nNonce: ${nonceData.nonce}\nIssued At: ${nonceData.issuedAt}`;
 
       // 3. Request user signature from connected wallet provider
-      let signature = await signMessage(challengeMsg);
+      const signature = await signMessage(challengeMsg);
       if (!signature) {
-        // Fallback for simulated local demo
-        signature = `mock_sig_${Date.now()}`;
+        throw new Error('Wallet cryptographic signature is required to verify ownership.');
       }
 
       // 4. Verify on Backend
       const verifyRes = await fetch('/api/auth/verify-wallet', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-requested-with': 'XMLHttpRequest' },
+        credentials: 'include',
         body: JSON.stringify({
           address: activeWallet,
           signature,
           nonce: nonceData.nonce,
           message: challengeMsg,
-          chainId: chainId || 97,
-          userId: activeUserId,
+          chainId: chainId || 56,
         }),
       });
 
@@ -156,9 +162,9 @@ export function useTradingBot() {
       // Call Server Route Handler
       const res = await fetch('/api/bot/trial/start', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-requested-with': 'XMLHttpRequest' },
+        credentials: 'include',
         body: JSON.stringify({
-          userId: activeUserId,
           walletAddress: targetWallet,
         }),
       });
@@ -195,14 +201,14 @@ export function useTradingBot() {
       try {
         const res = await fetch('/api/bot/subscription/subscribe', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'x-requested-with': 'XMLHttpRequest' },
+          credentials: 'include',
           body: JSON.stringify({
-            userId: activeUserId,
             planId,
             paymentToken,
             payingWallet: walletToUse,
             txHash: actualTxHash,
-            chainId: chainId || 97,
+            chainId: chainId || 56,
             isMockTest: true,
           }),
         });
@@ -228,8 +234,12 @@ export function useTradingBot() {
 
   // Fetch Protected Signals from Server
   const fetchProtectedSignals = useCallback(async () => {
+    if (!activeUserId) return;
     try {
-      const res = await fetch(`/api/bot/signals?userId=${encodeURIComponent(activeUserId)}&walletAddress=${encodeURIComponent(activeWallet || '')}`);
+      const res = await fetch(
+        `/api/bot/signals?walletAddress=${encodeURIComponent(activeWallet || '')}`,
+        { credentials: 'include' }
+      );
       if (res.ok) {
         const data = await res.json();
         if (data.signals) {
@@ -243,7 +253,11 @@ export function useTradingBot() {
 
   const revokeSession = useCallback(async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'x-requested-with': 'XMLHttpRequest' },
+        credentials: 'include',
+      });
     } catch { }
     return botStore.revokeSession(activeUserId);
   }, [activeUserId]);

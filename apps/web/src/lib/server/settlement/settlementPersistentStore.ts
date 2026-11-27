@@ -40,6 +40,8 @@ import {
 import { AUTHORIZED_TREASURY_WALLET } from '../../treasury/treasuryAccountingEngine';
 import { LIORA_TOKEN_ADDRESS } from '../../dex/dexOnChainClient';
 import { TestnetCollateralVerifier } from './testnetCollateralVerifier';
+import { prisma } from '../prisma';
+import { getPersistenceMode, isProductionPersistenceContext } from '../db';
 
 export interface SettlementStorageSnapshot {
   version: string;
@@ -88,7 +90,70 @@ export class SettlementPersistentStore {
     }
   }
 
+  private static usePostgres(): boolean {
+    return getPersistenceMode() === 'postgres';
+  }
+
+  private static mapDbSettlement(row: any): InvestmentSettlementRecord {
+    return {
+      id: row.id,
+      investorAddress: row.investorAddress,
+      investorName: row.investorName,
+      planId: row.planId,
+      tierNumber: row.tierNumber,
+      planCategory: row.planCategory,
+      planDisplayName: row.planDisplayName,
+      principalINR: Number(row.principalINR),
+      principalUSD: Number(row.principalUSD),
+      agreedReturnPercent: row.agreedReturnPercent,
+      agreedCashPayoutINR: Number(row.agreedCashPayoutINR),
+      agreedCashPayoutUSD: Number(row.agreedCashPayoutUSD),
+      contractualSettlementINR: Number(row.contractualSettlementINR),
+      contractualSettlementUSD: Number(row.contractualSettlementUSD),
+      multiplierFactor: Number(row.multiplierFactor),
+      termMonths: row.termMonths,
+      payoutMonth: row.payoutMonth,
+      settlementPayoutMonth: row.settlementPayoutMonth,
+      createdAt: Number(row.createdAtMs),
+      lockEndDate: Number(row.lockEndDateMs),
+      payoutDueDate: Number(row.payoutDueDateMs),
+      initialAllocationPriceINR: row.initialAllocationPriceINR,
+      initialAllocationPriceWei: row.initialAllocationPriceWei,
+      collateralTokensAllocated: Number(row.collateralTokensAllocated),
+      originalCollateralTokensFormatted: row.originalCollateralTokensFormatted,
+      originalCollateralTokensBaseUnits: row.originalCollateralTokensBaseUnits,
+      roundingRemainderWei: row.roundingRemainderWei,
+      collateralTokenAddress: row.collateralTokenAddress,
+      collateralCustodyType: row.collateralCustodyType,
+      stage: row.stage as SettlementStage,
+      stageUpdatedAt: Number(row.stageUpdatedAtMs),
+      payoutDispatched: (row.payoutDispatched as PayoutDispatchedDetails | null) ?? undefined,
+      paymentVerification: (row.paymentVerification as PaymentVerificationDetails | null) ?? undefined,
+      collateralReturned: (row.collateralReturned as CollateralReturnedDetails | null) ?? undefined,
+      dispute: (row.dispute as DisputeDetails | null) ?? undefined,
+    };
+  }
+
+  private static mapDbAuditLog(row: any): SettlementAuditLog {
+    return {
+      id: row.id,
+      investmentId: row.investmentId,
+      timestamp: Number(row.timestampMs),
+      actor: row.actor,
+      action: row.action,
+      previousStage: row.previousStage as SettlementStage | 'INVESTMENT_CREATED',
+      newStage: row.newStage as SettlementStage,
+      details: row.details,
+      referenceId: row.referenceId ?? undefined,
+    };
+  }
+
   public static initialize(): void {
+    if (this.usePostgres() || isProductionPersistenceContext()) {
+      this.isLoaded = true;
+      return;
+    }
+
     if (this.isLoaded) return;
     this.ensureDataDir();
 
@@ -236,6 +301,9 @@ export class SettlementPersistentStore {
   }
 
   private static persistSync(): void {
+    if (this.usePostgres() || isProductionPersistenceContext()) {
+      return;
+    }
     this.ensureDataDir();
     const snapshot: SettlementStorageSnapshot = {
       version: '1.0.0-sprint3d',
@@ -254,8 +322,19 @@ export class SettlementPersistentStore {
   }
 
   public static resetForTesting(): void {
+    if (isProductionPersistenceContext()) {
+      throw new Error('PRODUCTION_SAFETY_ERROR: resetForTesting() cannot be called in production.');
+    }
     this.isLoaded = false;
     this.spentTxHashes.clear();
+    if (this.usePostgres()) {
+      this.investments.clear();
+      this.auditLogs = [];
+      PaymentReferenceRegistry.resetForTesting();
+      this.idempotencyMap.clear();
+      this.isLoaded = true;
+      return;
+    }
     this.seedInitial();
     PaymentReferenceRegistry.resetForTesting();
     this.idempotencyMap.clear();
@@ -263,6 +342,14 @@ export class SettlementPersistentStore {
   }
 
   public static async getAllInvestments(investorAddress?: string): Promise<InvestmentSettlementRecord[]> {
+    if (this.usePostgres()) {
+      const clean = investorAddress ? investorAddress.trim().toLowerCase() : undefined;
+      const rows = await prisma.investmentSettlement.findMany({
+        where: clean ? { investorAddress: clean } : undefined,
+        orderBy: { createdAtMs: 'desc' },
+      });
+      return rows.map((r) => this.mapDbSettlement(r));
+    }
     this.initialize();
     const all = Array.from(this.investments.values());
     if (investorAddress) {
@@ -273,11 +360,22 @@ export class SettlementPersistentStore {
   }
 
   public static async getInvestmentById(id: string): Promise<InvestmentSettlementRecord | null> {
+    if (this.usePostgres()) {
+      const row = await prisma.investmentSettlement.findUnique({ where: { id } });
+      return row ? this.mapDbSettlement(row) : null;
+    }
     this.initialize();
     return this.investments.get(id) || null;
   }
 
   public static async getAuditLogs(investmentId?: string): Promise<SettlementAuditLog[]> {
+    if (this.usePostgres()) {
+      const rows = await prisma.settlementAuditEntry.findMany({
+        where: investmentId ? { investmentId } : undefined,
+        orderBy: { timestampMs: 'desc' },
+      });
+      return rows.map((r) => this.mapDbAuditLog(r));
+    }
     this.initialize();
     if (investmentId) {
       return this.auditLogs.filter((l) => l.investmentId === investmentId);
@@ -296,6 +394,104 @@ export class SettlementPersistentStore {
     initialAllocationPriceINR: string | number;
     idempotencyKey?: string;
   }): Promise<{ success: boolean; record?: InvestmentSettlementRecord; error?: string }> {
+    if (this.usePostgres()) {
+      try {
+        return await prisma.$transaction(async (tx) => {
+          if (params.idempotencyKey) {
+            const existingKey = await tx.settlementIdempotencyKey.findUnique({
+              where: { idempotencyKey: params.idempotencyKey },
+            });
+            if (existingKey) {
+              return existingKey.result as unknown as { success: boolean; record?: InvestmentSettlementRecord; error?: string };
+            }
+          }
+
+          const plan = CONFIRMED_INVESTMENT_PLANS[params.planId];
+          if (!plan) {
+            return { success: false, error: `UNKNOWN_PLAN: Invalid plan ID ${params.planId}` };
+          }
+
+          const quote = ProportionalAllocationEngine.calculateAllocation(
+            plan,
+            params.initialAllocationPriceINR
+          );
+
+          const randomSuffix = crypto.randomBytes(4).toString('hex').toUpperCase();
+          const id = `INV-${Date.now()}-${plan.tierNumber}-${randomSuffix}`;
+          const now = Date.now();
+          const lockEndDate = now + plan.lockDurationMonths * 30 * 24 * 60 * 60 * 1000;
+          const payoutDueDate = now + plan.settlementPayoutMonth * 30 * 24 * 60 * 60 * 1000;
+          const agreedReturnPercent = Math.round(((plan.contractualAllocationINR - plan.principalINR) / plan.principalINR) * 100);
+          const planCategory = plan.planId.replace('TIER_', '');
+
+          const created = await tx.investmentSettlement.create({
+            data: {
+              id,
+              investorAddress: params.investorAddress.toLowerCase(),
+              investorName: params.investorName,
+              planId: plan.planId,
+              tierNumber: plan.tierNumber,
+              planCategory,
+              planDisplayName: plan.displayName,
+              principalINR: plan.principalINR,
+              principalUSD: plan.principalUSD,
+              agreedReturnPercent,
+              agreedCashPayoutINR: plan.contractualAllocationINR,
+              agreedCashPayoutUSD: plan.contractualAllocationUSD,
+              contractualSettlementINR: plan.contractualAllocationINR,
+              contractualSettlementUSD: plan.contractualAllocationUSD,
+              multiplierFactor: plan.multiplierFactor,
+              termMonths: plan.lockDurationMonths,
+              payoutMonth: plan.settlementPayoutMonth,
+              settlementPayoutMonth: plan.settlementPayoutMonth,
+              createdAtMs: BigInt(now),
+              lockEndDateMs: BigInt(lockEndDate),
+              payoutDueDateMs: BigInt(payoutDueDate),
+              initialAllocationPriceINR: quote.allocationPriceINR,
+              initialAllocationPriceWei: quote.allocationPriceWei,
+              collateralTokensAllocated: quote.allocatedTokensNumber,
+              originalCollateralTokensFormatted: quote.allocatedTokensFormatted,
+              originalCollateralTokensBaseUnits: quote.allocatedTokensBaseUnits,
+              roundingRemainderWei: quote.roundingRemainderWei,
+              collateralTokenAddress: LIORA_TOKEN_ADDRESS,
+              collateralCustodyType: 'ESCROW_VAULT_PROTOTYPE',
+              stage: 'COLLATERAL_PERIOD_ACTIVE',
+              stageUpdatedAtMs: BigInt(now),
+              idempotencyKey: params.idempotencyKey ?? null,
+            },
+          });
+
+          await tx.settlementAuditEntry.create({
+            data: {
+              id: `LOG-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`,
+              investmentId: id,
+              timestampMs: BigInt(now),
+              actor: params.investorAddress.toLowerCase(),
+              action: 'INVESTMENT_CREATED_AND_COLLATERAL_FINALIZED',
+              previousStage: 'INVESTMENT_CREATED',
+              newStage: 'COLLATERAL_PERIOD_ACTIVE',
+              details: `Plan ${plan.displayName} created. Principal: ₹${plan.principalINR.toLocaleString()}. Collateral: ${quote.allocatedTokensFormatted} LIORA @ ₹${quote.allocationPriceINR}. Immutable terms finalized.`,
+            },
+          });
+
+          const record = this.mapDbSettlement(created);
+          const result = { success: true, record };
+          if (params.idempotencyKey) {
+            await tx.settlementIdempotencyKey.create({
+              data: {
+                idempotencyKey: params.idempotencyKey,
+                operation: 'CREATE_INVESTMENT',
+                result: result as any,
+              },
+            });
+          }
+          return result;
+        });
+      } catch (err: any) {
+        return { success: false, error: err.message };
+      }
+    }
+
     return this.withLock(async () => {
       this.initialize();
 
@@ -402,6 +598,128 @@ export class SettlementPersistentStore {
     adminNotes?: string;
     idempotencyKey?: string;
   }): Promise<{ success: boolean; error?: string }> {
+    if (this.usePostgres()) {
+      try {
+        return await prisma.$transaction(async (tx) => {
+          if (params.idempotencyKey) {
+            const existingKey = await tx.settlementIdempotencyKey.findUnique({
+              where: { idempotencyKey: params.idempotencyKey },
+            });
+            if (existingKey) {
+              return existingKey.result as unknown as { success: boolean; error?: string };
+            }
+          }
+
+          const inv = await tx.investmentSettlement.findUnique({ where: { id: params.investmentId } });
+          if (!inv) return { success: false, error: 'Investment record not found.' };
+
+          if (inv.stage === 'SETTLED' || inv.stage === 'SETTLEMENT_COMPLETED') {
+            return { success: false, error: 'Cannot dispatch payout for an already settled investment.' };
+          }
+
+          if (params.dispatchedBy.toLowerCase() !== AUTHORIZED_TREASURY_WALLET.toLowerCase()) {
+            return { success: false, error: 'UNAUTHORIZED_PAYOUT_CALLER: Only the authorized treasury wallet can record payouts.' };
+          }
+
+          if (!params.referenceNumber || params.referenceNumber.trim().length < 5) {
+            return { success: false, error: 'A valid payment reference / UTR is required.' };
+          }
+
+          const envName = isProductionPersistenceContext() ? 'BSC_MAINNET' : 'BSC_TESTNET';
+          const normalized = normalizePaymentReference(params.referenceNumber, params.paymentRail, envName);
+
+          const existingRef = await tx.paymentReferenceRegistryEntry.findUnique({
+            where: { canonicalKey: normalized.canonicalKey },
+          });
+          if (existingRef && existingRef.status === 'ACTIVE') {
+            return {
+              success: false,
+              error: `DUPLICATE_PAYMENT_REFERENCE: Canonical reference "${normalized.canonicalKey}" has already been used by allocation/investment ${existingRef.allocationOrInvId}.`,
+            };
+          }
+
+          if (existingRef) {
+            await tx.paymentReferenceRegistryEntry.update({
+              where: { canonicalKey: normalized.canonicalKey },
+              data: {
+                normalizedRef: normalized.normalizedReference,
+                rawReference: params.referenceNumber,
+                paymentRail: params.paymentRail,
+                environment: envName,
+                allocationOrInvId: params.investmentId,
+                amountPaidINR: params.amountPaidINR,
+                registeredBy: params.dispatchedBy,
+                status: 'ACTIVE',
+              },
+            });
+          } else {
+            await tx.paymentReferenceRegistryEntry.create({
+              data: {
+                canonicalKey: normalized.canonicalKey,
+                normalizedRef: normalized.normalizedReference,
+                rawReference: params.referenceNumber,
+                paymentRail: params.paymentRail,
+                environment: envName,
+                allocationOrInvId: params.investmentId,
+                amountPaidINR: params.amountPaidINR,
+                registeredBy: params.dispatchedBy,
+                status: 'ACTIVE',
+              },
+            });
+          }
+
+          const now = Date.now();
+          const newStage: SettlementStage = 'PAYMENT_DISPATCHED';
+          const payoutDispatched: PayoutDispatchedDetails = {
+            amountPaidINR: params.amountPaidINR,
+            paymentRail: params.paymentRail,
+            referenceNumber: params.referenceNumber,
+            canonicalReferenceKey: normalized.canonicalKey,
+            dispatchedAt: now,
+            dispatchedBy: params.dispatchedBy,
+            adminNotes: params.adminNotes,
+          };
+
+          await tx.investmentSettlement.update({
+            where: { id: params.investmentId },
+            data: {
+              stage: newStage,
+              stageUpdatedAtMs: BigInt(now),
+              payoutDispatched: payoutDispatched as any,
+            },
+          });
+
+          await tx.settlementAuditEntry.create({
+            data: {
+              id: `LOG-${now}-${crypto.randomBytes(3).toString('hex')}`,
+              investmentId: params.investmentId,
+              timestampMs: BigInt(now),
+              actor: params.dispatchedBy,
+              action: newStage,
+              previousStage: inv.stage,
+              newStage,
+              details: `Treasury recorded manual payout of ₹${params.amountPaidINR.toLocaleString()} via ${params.paymentRail} (Ref: ${params.referenceNumber}). Status: Awaiting independent verification.`,
+              referenceId: params.referenceNumber,
+            },
+          });
+
+          const result = { success: true };
+          if (params.idempotencyKey) {
+            await tx.settlementIdempotencyKey.create({
+              data: {
+                idempotencyKey: params.idempotencyKey,
+                operation: 'RECORD_MANUAL_PAYOUT',
+                result: result as any,
+              },
+            });
+          }
+          return result;
+        });
+      } catch (err: any) {
+        return { success: false, error: err.message };
+      }
+    }
+
     return this.withLock(async () => {
       this.initialize();
 
@@ -488,6 +806,102 @@ export class SettlementPersistentStore {
     reason: string;
     correctedBy: string;
   }): Promise<{ success: boolean; error?: string }> {
+    if (this.usePostgres()) {
+      try {
+        return await prisma.$transaction(async (tx) => {
+          const inv = await tx.investmentSettlement.findUnique({ where: { id: params.investmentId } });
+          const payoutDispatched = inv?.payoutDispatched as unknown as PayoutDispatchedDetails | null;
+          if (!inv || !payoutDispatched) {
+            return { success: false, error: 'No dispatched payout record found for this investment.' };
+          }
+
+          if (params.correctedBy.toLowerCase() !== AUTHORIZED_TREASURY_WALLET.toLowerCase()) {
+            return { success: false, error: 'UNAUTHORIZED_CALLER: Only authorized treasury owner can correct payout references.' };
+          }
+
+          const envName = isProductionPersistenceContext() ? 'BSC_MAINNET' : 'BSC_TESTNET';
+          const oldNorm = normalizePaymentReference(payoutDispatched.referenceNumber, payoutDispatched.paymentRail, envName);
+          const newNorm = normalizePaymentReference(params.newReferenceNumber, params.paymentRail, envName);
+
+          const conflict = await tx.paymentReferenceRegistryEntry.findUnique({
+            where: { canonicalKey: newNorm.canonicalKey },
+          });
+          if (conflict && conflict.status === 'ACTIVE' && conflict.allocationOrInvId !== params.investmentId) {
+            return {
+              success: false,
+              error: `DUPLICATE_PAYMENT_REFERENCE: New reference "${newNorm.canonicalKey}" already registered to another investment.`,
+            };
+          }
+
+          const now = Date.now();
+          await tx.paymentReferenceRegistryEntry.updateMany({
+            where: { canonicalKey: payoutDispatched.canonicalReferenceKey || oldNorm.canonicalKey },
+            data: {
+              status: 'CORRECTED',
+              correctionReason: params.reason,
+              correctedBy: params.correctedBy,
+              correctedAt: new Date(now),
+            },
+          });
+
+          await tx.paymentReferenceRegistryEntry.upsert({
+            where: { canonicalKey: newNorm.canonicalKey },
+            create: {
+              canonicalKey: newNorm.canonicalKey,
+              normalizedRef: newNorm.normalizedReference,
+              rawReference: params.newReferenceNumber,
+              paymentRail: params.paymentRail,
+              environment: envName,
+              allocationOrInvId: params.investmentId,
+              amountPaidINR: payoutDispatched.amountPaidINR,
+              registeredBy: params.correctedBy,
+              status: 'ACTIVE',
+            },
+            update: {
+              normalizedRef: newNorm.normalizedReference,
+              rawReference: params.newReferenceNumber,
+              paymentRail: params.paymentRail,
+              allocationOrInvId: params.investmentId,
+              status: 'ACTIVE',
+            },
+          });
+
+          const oldRef = payoutDispatched.referenceNumber;
+          const updatedPayout: PayoutDispatchedDetails = {
+            ...payoutDispatched,
+            referenceNumber: params.newReferenceNumber,
+            paymentRail: params.paymentRail,
+            canonicalReferenceKey: newNorm.canonicalKey,
+          };
+
+          await tx.investmentSettlement.update({
+            where: { id: params.investmentId },
+            data: {
+              payoutDispatched: updatedPayout as any,
+            },
+          });
+
+          await tx.settlementAuditEntry.create({
+            data: {
+              id: `LOG-${now}-${crypto.randomBytes(3).toString('hex')}`,
+              investmentId: params.investmentId,
+              timestampMs: BigInt(now),
+              actor: params.correctedBy,
+              action: 'PAYMENT_REFERENCE_CORRECTED',
+              previousStage: inv.stage,
+              newStage: inv.stage,
+              details: `Payment reference corrected from "${oldRef}" to "${params.newReferenceNumber}". Reason: ${params.reason}`,
+              referenceId: params.newReferenceNumber,
+            },
+          });
+
+          return { success: true };
+        });
+      } catch (err: any) {
+        return { success: false, error: err.message };
+      }
+    }
+
     return this.withLock(async () => {
       this.initialize();
       const inv = this.investments.get(params.investmentId);
@@ -545,6 +959,94 @@ export class SettlementPersistentStore {
     notes?: string;
     idempotencyKey?: string;
   }): Promise<{ success: boolean; error?: string }> {
+    if (this.usePostgres()) {
+      try {
+        return await prisma.$transaction(async (tx) => {
+          if (params.idempotencyKey) {
+            const existingKey = await tx.settlementIdempotencyKey.findUnique({
+              where: { idempotencyKey: params.idempotencyKey },
+            });
+            if (existingKey) {
+              return existingKey.result as unknown as { success: boolean; error?: string };
+            }
+          }
+
+          const inv = await tx.investmentSettlement.findUnique({ where: { id: params.investmentId } });
+          if (!inv) return { success: false, error: 'Investment record not found.' };
+
+          if (
+            inv.stage !== 'PAYMENT_DISPATCHED' &&
+            inv.stage !== 'MANUAL_PAYOUT_INITIATED' &&
+            inv.stage !== 'PAYMENT_VERIFICATION_PENDING' &&
+            inv.stage !== 'DISPUTED' &&
+            inv.stage !== 'DISPUTED_OR_FAILED_SETTLEMENT'
+          ) {
+            return {
+              success: false,
+              error: `Cannot verify payment while in stage: ${inv.stage}. Payment must be dispatched first.`,
+            };
+          }
+
+          const now = Date.now();
+          const newStage: SettlementStage = 'PAYMENT_INDEPENDENTLY_VERIFIED';
+          const paymentVerification: PaymentVerificationDetails = {
+            verifiedAt: now,
+            verifiedBy: params.verifierAddress.toLowerCase(),
+            verificationMethod: params.method,
+            verificationNotes: params.notes || 'Payment independently confirmed.',
+          };
+
+          const existingDispute = inv.dispute as unknown as DisputeDetails | null;
+          let updatedDispute = existingDispute;
+          if (existingDispute && existingDispute.status === 'OPEN') {
+            updatedDispute = {
+              ...existingDispute,
+              status: 'RESOLVED_PAYMENT_VERIFIED',
+              resolvedAt: now,
+              resolvedBy: params.verifierAddress.toLowerCase(),
+            };
+          }
+
+          await tx.investmentSettlement.update({
+            where: { id: params.investmentId },
+            data: {
+              stage: newStage,
+              stageUpdatedAtMs: BigInt(now),
+              paymentVerification: paymentVerification as any,
+              ...(updatedDispute ? { dispute: updatedDispute as any } : {}),
+            },
+          });
+
+          await tx.settlementAuditEntry.create({
+            data: {
+              id: `LOG-${now}-${crypto.randomBytes(3).toString('hex')}`,
+              investmentId: params.investmentId,
+              timestampMs: BigInt(now),
+              actor: params.verifierAddress.toLowerCase(),
+              action: 'PAYMENT_INDEPENDENTLY_VERIFIED',
+              previousStage: inv.stage,
+              newStage,
+              details: `Payment independently verified via ${params.method} by ${params.verifierAddress}.`,
+            },
+          });
+
+          const result = { success: true };
+          if (params.idempotencyKey) {
+            await tx.settlementIdempotencyKey.create({
+              data: {
+                idempotencyKey: params.idempotencyKey,
+                operation: 'VERIFY_PAYMENT',
+                result: result as any,
+              },
+            });
+          }
+          return result;
+        });
+      } catch (err: any) {
+        return { success: false, error: err.message };
+      }
+    }
+
     return this.withLock(async () => {
       this.initialize();
 
@@ -624,6 +1126,175 @@ export class SettlementPersistentStore {
     returnedTokensAmount?: string | number | bigint;
     idempotencyKey?: string;
   }): Promise<{ success: boolean; error?: string }> {
+    if (this.usePostgres()) {
+      try {
+        if (params.idempotencyKey) {
+          const existingKey = await prisma.settlementIdempotencyKey.findUnique({
+            where: { idempotencyKey: params.idempotencyKey },
+          });
+          if (existingKey) {
+            return existingKey.result as unknown as { success: boolean; error?: string };
+          }
+        }
+
+        const preInv = await prisma.investmentSettlement.findUnique({ where: { id: params.investmentId } });
+        if (!preInv) return { success: false, error: 'Investment record not found.' };
+
+        const isVerified =
+          preInv.stage === 'PAYMENT_INDEPENDENTLY_VERIFIED' ||
+          preInv.stage === 'PAYMENT_CONFIRMED' ||
+          preInv.stage === 'COLLATERAL_RETURN_PENDING' ||
+          preInv.paymentVerification !== null;
+
+        if (!isVerified) {
+          return {
+            success: false,
+            error: `Collateral cannot be returned until cash payment has been independently verified. Current stage: ${preInv.stage}.`,
+          };
+        }
+
+        if (preInv.stage === 'SETTLED' || preInv.stage === 'SETTLEMENT_COMPLETED') {
+          return {
+            success: false,
+            error: 'DUPLICATE_COLLATERAL_RETURN: This investment has already been settled.',
+          };
+        }
+
+        const cleanTxHash = params.txHash.toLowerCase().trim();
+        if (!cleanTxHash.startsWith('0x') || cleanTxHash.length < 10) {
+          return { success: false, error: 'A valid transaction hash is required.' };
+        }
+
+        const existingSpent = await prisma.investmentSettlement.findUnique({
+          where: { collateralTxHash: cleanTxHash },
+        });
+        if (existingSpent) {
+          return {
+            success: false,
+            error: 'TX_HASH_ALREADY_SPENT: Transaction hash has already been used to return collateral for a settlement. Transaction replay is strictly prohibited.',
+          };
+        }
+
+        const expectedBaseUnits = BigInt(preInv.originalCollateralTokensBaseUnits);
+        if (params.returnedTokensAmount !== undefined) {
+          const verification = ProportionalAllocationEngine.verifyExactCollateralReturn(
+            expectedBaseUnits,
+            params.returnedTokensAmount
+          );
+
+          if (!verification.isValid) {
+            return {
+              success: false,
+              error: `COLLATERAL_QUANTITY_MISMATCH: Must return EXACTLY original allocated quantity. Expected: ${preInv.originalCollateralTokensFormatted} LIORA (${expectedBaseUnits.toString()} atomic units). Received: ${verification.receivedBaseUnits} atomic units. Difference: ${verification.differenceWei} atomic units.`,
+            };
+          }
+        }
+
+        const isSimMock =
+          process.env.NODE_ENV !== 'production' &&
+          (cleanTxHash.startsWith('0x0000') ||
+            cleanTxHash.includes('mock') ||
+            cleanTxHash.startsWith('0x1111') ||
+            cleanTxHash.startsWith('0x2222') ||
+            cleanTxHash.startsWith('0x3333') ||
+            cleanTxHash.startsWith('0x4444') ||
+            cleanTxHash.startsWith('0x5555'));
+
+        if (cleanTxHash.length === 66) {
+          const onChainResult = await TestnetCollateralVerifier.verifyCollateralReturnReceipt({
+            txHash: cleanTxHash,
+            expectedInvestorAddress: preInv.investorAddress,
+            expectedBaseUnits,
+            allowSandboxMock: isSimMock,
+          });
+
+          if (!onChainResult.isValid) {
+            return {
+              success: false,
+              error: `ONCHAIN_COLLATERAL_VERIFICATION_FAILED: ${onChainResult.error}`,
+            };
+          }
+        }
+
+        return await prisma.$transaction(async (tx) => {
+          if (params.idempotencyKey) {
+            const existingKey = await tx.settlementIdempotencyKey.findUnique({
+              where: { idempotencyKey: params.idempotencyKey },
+            });
+            if (existingKey) {
+              return existingKey.result as unknown as { success: boolean; error?: string };
+            }
+          }
+
+          const inv = await tx.investmentSettlement.findUnique({ where: { id: params.investmentId } });
+          if (!inv) return { success: false, error: 'Investment record not found.' };
+          if (inv.stage === 'SETTLED' || inv.stage === 'SETTLEMENT_COMPLETED') {
+            return { success: false, error: 'DUPLICATE_COLLATERAL_RETURN: This investment has already been settled.' };
+          }
+
+          const replayCheck = await tx.investmentSettlement.findUnique({
+            where: { collateralTxHash: cleanTxHash },
+          });
+          if (replayCheck) {
+            return {
+              success: false,
+              error: 'TX_HASH_ALREADY_SPENT: Transaction hash has already been used to return collateral for a settlement. Transaction replay is strictly prohibited.',
+            };
+          }
+
+          const now = Date.now();
+          const newStage: SettlementStage = 'SETTLEMENT_COMPLETED';
+          const collateralReturned: CollateralReturnedDetails = {
+            returnedAt: now,
+            txHash: params.txHash,
+            returnedTokens: Number(inv.collateralTokensAllocated),
+            returnedTokensFormatted: inv.originalCollateralTokensFormatted,
+            returnedTokensBaseUnits: inv.originalCollateralTokensBaseUnits,
+            recipientTreasuryWallet: AUTHORIZED_TREASURY_WALLET,
+            isExactQuantityMatch: true,
+          };
+
+          await tx.investmentSettlement.update({
+            where: { id: params.investmentId },
+            data: {
+              stage: newStage,
+              stageUpdatedAtMs: BigInt(now),
+              collateralTxHash: cleanTxHash,
+              collateralReturned: collateralReturned as any,
+            },
+          });
+
+          await tx.settlementAuditEntry.create({
+            data: {
+              id: `LOG-${now}-${crypto.randomBytes(3).toString('hex')}`,
+              investmentId: params.investmentId,
+              timestampMs: BigInt(now),
+              actor: params.actorAddress.toLowerCase(),
+              action: 'SETTLEMENT_COMPLETED',
+              previousStage: inv.stage,
+              newStage,
+              details: `Exact original collateral (${inv.originalCollateralTokensFormatted} LIORA) returned to treasury (${AUTHORIZED_TREASURY_WALLET.slice(0, 6)}...); settlement completed.`,
+              referenceId: params.txHash,
+            },
+          });
+
+          const result = { success: true };
+          if (params.idempotencyKey) {
+            await tx.settlementIdempotencyKey.create({
+              data: {
+                idempotencyKey: params.idempotencyKey,
+                operation: 'RECORD_COLLATERAL_RETURN',
+                result: result as any,
+              },
+            });
+          }
+          return result;
+        });
+      } catch (err: any) {
+        return { success: false, error: err.message };
+      }
+    }
+
     return this.withLock(async () => {
       this.initialize();
 
@@ -764,6 +1435,60 @@ export class SettlementPersistentStore {
     reason: string;
     investorAddress: string;
   }): Promise<{ success: boolean; error?: string }> {
+    if (this.usePostgres()) {
+      try {
+        return await prisma.$transaction(async (tx) => {
+          const inv = await tx.investmentSettlement.findUnique({ where: { id: params.investmentId } });
+          if (!inv) return { success: false, error: 'Investment record not found.' };
+
+          if (inv.investorAddress.toLowerCase() !== params.investorAddress.toLowerCase()) {
+            return { success: false, error: 'Unauthorized: Only the designated investor can file a dispute.' };
+          }
+
+          if (!params.reason || params.reason.trim().length < 10) {
+            return { success: false, error: 'Please enter a clear explanation for the payment dispute (minimum 10 characters).' };
+          }
+
+          const now = Date.now();
+          const newStage: SettlementStage = 'DISPUTED_OR_FAILED_SETTLEMENT';
+          const dispute: DisputeDetails = {
+            disputeId: `DISP-${now}`,
+            raisedAt: now,
+            raisedBy: params.investorAddress.toLowerCase(),
+            reason: params.reason,
+            status: 'OPEN',
+          };
+
+          await tx.investmentSettlement.update({
+            where: { id: params.investmentId },
+            data: {
+              stage: newStage,
+              stageUpdatedAtMs: BigInt(now),
+              dispute: dispute as any,
+            },
+          });
+
+          await tx.settlementAuditEntry.create({
+            data: {
+              id: `LOG-${now}-${crypto.randomBytes(3).toString('hex')}`,
+              investmentId: params.investmentId,
+              timestampMs: BigInt(now),
+              actor: params.investorAddress.toLowerCase(),
+              action: 'DISPUTE_RAISED',
+              previousStage: inv.stage,
+              newStage,
+              details: `Investor raised dispute: ${params.reason}`,
+              referenceId: dispute.disputeId,
+            },
+          });
+
+          return { success: true };
+        });
+      } catch (err: any) {
+        return { success: false, error: err.message };
+      }
+    }
+
     return this.withLock(async () => {
       this.initialize();
       const inv = this.investments.get(params.investmentId);
@@ -815,6 +1540,67 @@ export class SettlementPersistentStore {
     arbitrationNotes: string;
     arbitratorAddress: string;
   }): Promise<{ success: boolean; error?: string }> {
+    if (this.usePostgres()) {
+      try {
+        return await prisma.$transaction(async (tx) => {
+          const inv = await tx.investmentSettlement.findUnique({ where: { id: params.investmentId } });
+          const existingDispute = inv?.dispute as unknown as DisputeDetails | null;
+          if (!inv || !existingDispute) {
+            return { success: false, error: 'Active dispute not found for this investment.' };
+          }
+
+          const now = Date.now();
+          const updatedDispute: DisputeDetails = {
+            ...existingDispute,
+            status: params.resolution,
+            arbitrationNotes: params.arbitrationNotes,
+            resolvedAt: now,
+            resolvedBy: params.arbitratorAddress.toLowerCase(),
+          };
+
+          let nextStage: SettlementStage = 'SETTLEMENT_COMPLETED';
+          let paymentVerification = inv.paymentVerification as any;
+          if (params.resolution === 'RESOLVED_PAYMENT_VERIFIED') {
+            nextStage = 'PAYMENT_INDEPENDENTLY_VERIFIED';
+            paymentVerification = {
+              verifiedAt: now,
+              verifiedBy: params.arbitratorAddress.toLowerCase(),
+              verificationMethod: 'ARBITRATION_VERIFICATION',
+              verificationNotes: params.arbitrationNotes,
+            };
+          }
+
+          await tx.investmentSettlement.update({
+            where: { id: params.investmentId },
+            data: {
+              stage: nextStage,
+              stageUpdatedAtMs: BigInt(now),
+              dispute: updatedDispute as any,
+              ...(paymentVerification ? { paymentVerification } : {}),
+            },
+          });
+
+          await tx.settlementAuditEntry.create({
+            data: {
+              id: `LOG-${now}-${crypto.randomBytes(3).toString('hex')}`,
+              investmentId: params.investmentId,
+              timestampMs: BigInt(now),
+              actor: params.arbitratorAddress.toLowerCase(),
+              action: 'DISPUTE_ARBITRATED',
+              previousStage: inv.stage,
+              newStage: nextStage,
+              details: `Dispute arbitrated: ${params.resolution}. Notes: ${params.arbitrationNotes}`,
+              referenceId: existingDispute.disputeId,
+            },
+          });
+
+          return { success: true };
+        });
+      } catch (err: any) {
+        return { success: false, error: err.message };
+      }
+    }
+
     return this.withLock(async () => {
       this.initialize();
       const inv = this.investments.get(params.investmentId);

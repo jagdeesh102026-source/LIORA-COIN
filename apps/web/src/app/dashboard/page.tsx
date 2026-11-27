@@ -85,12 +85,12 @@ interface CustodyDataResponse {
 }
 
 const INVESTMENT_PLANS = [
-  { id: 'TIER_01', name: 'Tier 01 (Starter)', principalINR: 50000, contractualAllocationINR: 125000, multiplier: 2.5, payoutMonth: 4 },
-  { id: 'TIER_02', name: 'Tier 02 (Basic)', principalINR: 100000, contractualAllocationINR: 600000, multiplier: 6.0, payoutMonth: 4 },
-  { id: 'TIER_03', name: 'Tier 03 (Standard)', principalINR: 200000, contractualAllocationINR: 1000000, multiplier: 5.0, payoutMonth: 4 },
-  { id: 'TIER_04', name: 'Tier 04 (Advanced)', principalINR: 300000, contractualAllocationINR: 2400000, multiplier: 8.0, payoutMonth: 10 },
-  { id: 'TIER_05', name: 'Tier 05 (Premium)', principalINR: 500000, contractualAllocationINR: 4000000, multiplier: 8.0, payoutMonth: 12 },
-  { id: 'TIER_06', name: 'Tier 06 (Elite)', principalINR: 1000000, contractualAllocationINR: 10000000, multiplier: 10.0, payoutMonth: 12 },
+  { id: 'TIER_01', name: 'Tier 01 (Starter)', principalINR: 50000, contractualAllocationINR: 125000, multiplier: 2.5, payoutMonth: 4, lockMonths: 3, maturityNote: 'Month 4 settlement (3M lock)' },
+  { id: 'TIER_02', name: 'Tier 02 (Basic)', principalINR: 100000, contractualAllocationINR: 600000, multiplier: 6.0, payoutMonth: 4, lockMonths: 3, maturityNote: 'Month 4 settlement (3M lock)' },
+  { id: 'TIER_03', name: 'Tier 03 (Standard)', principalINR: 200000, contractualAllocationINR: 1000000, multiplier: 5.0, payoutMonth: 4, lockMonths: 3, maturityNote: 'Month 4 settlement (3M lock)' },
+  { id: 'TIER_04', name: 'Tier 04 (Advanced)', principalINR: 300000, contractualAllocationINR: 2400000, multiplier: 8.0, payoutMonth: 10, lockMonths: 9, maturityNote: 'Month 10 settlement (9M lock)' },
+  { id: 'TIER_05', name: 'Tier 05 (Premium)', principalINR: 500000, contractualAllocationINR: 3000000, multiplier: 6.0, payoutMonth: 12, lockMonths: 12, maturityNote: '12M lock (Month 12 vs 13 pending confirmation)' },
+  { id: 'TIER_06', name: 'Tier 06 (Elite)', principalINR: 1000000, contractualAllocationINR: 9000000, multiplier: 9.0, payoutMonth: 12, lockMonths: 12, maturityNote: '12M lock (Month 12 vs 13 pending confirmation)' },
 ];
 
 export default function DashboardPage() {
@@ -112,9 +112,7 @@ export default function DashboardPage() {
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [purchaseSuccess, setPurchaseSuccess] = useState<string | null>(null);
 
-  // Admin Verification Action State
-  const [verifyingId, setVerifyingId] = useState<string | null>(null);
-  const [adminActionMsg, setAdminActionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  // Admin Verification Action State removed from investor-facing dashboard (moved strictly to /admin console)
 
   // Prevent background scrolling and enable Escape key to close modal
   useEffect(() => {
@@ -252,44 +250,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Admin Quick-Verification Handler (Available to verify pending records)
-  const handleAdminVerify = async (allocationId: string, action: 'APPROVE' | 'REJECT') => {
-    setVerifyingId(allocationId);
-    setAdminActionMsg(null);
-    try {
-      const res = await fetch('/api/custody/verify-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          allocationId,
-          action,
-          adminNotes: action === 'APPROVE' 
-            ? 'Payment verified by administrator on custodial console.' 
-            : 'Payment rejected by administrator.',
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || data.message || 'Failed to update payment status.');
-      }
-
-      setAdminActionMsg({
-        type: 'success',
-        text: action === 'APPROVE'
-          ? `Allocation ${allocationId} verified! Confirmed tokens reserved from treasury.`
-          : `Allocation ${allocationId} rejected.`,
-      });
-
-      await fetchCustodyData();
-    } catch (err: any) {
-      setAdminActionMsg({ type: 'error', text: err.message || 'Verification failed.' });
-    } finally {
-      setVerifyingId(null);
-    }
-  };
-
   // Filtered allocations based on active tab
   const displayedAllocations = useMemo(() => {
     if (!custodyData?.custodialAllocations) return [];
@@ -372,22 +332,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Admin Action Notification */}
-      {adminActionMsg && (
-        <div
-          className={`p-4 rounded-2xl border text-xs font-semibold flex items-center justify-between ${
-            adminActionMsg.type === 'success'
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-              : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-          }`}
-        >
-          <span>{adminActionMsg.text}</span>
-          <button onClick={() => setAdminActionMsg(null)} className="text-slate-400 hover:text-white">
-            ✕
-          </button>
-        </div>
-      )}
-
       {/* 4 Core Financial Metric Cards (Priority 1 Requirements) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Card 1: Total Confirmed LIORA Allocation */}
@@ -427,12 +371,12 @@ export default function DashboardPage() {
             <span>Total Confirmed Investment</span>
             <CreditCard className="w-4 h-4 text-indigo-400" />
           </div>
-          <div className="text-2xl font-extrabold text-white">
-            ₹{(custodyData?.totalPurchaseINR || 0).toLocaleString()}{' '}
+          <div className="text-2xl font-extrabold text-white" suppressHydrationWarning>
+            ₹{(custodyData?.totalPurchaseINR || 0).toLocaleString('en-US')}{' '}
             <span className="text-xs text-secondary font-normal">INR</span>
           </div>
-          <div className="text-[11px] text-secondary">
-            ≈ ${(custodyData?.totalPurchaseUSD || 0).toLocaleString()} USD
+          <div className="text-[11px] text-secondary" suppressHydrationWarning>
+            ≈ ${(custodyData?.totalPurchaseUSD || 0).toLocaleString('en-US')} USD
           </div>
         </div>
 
@@ -549,8 +493,8 @@ export default function DashboardPage() {
                         <div className="text-[11px] font-mono text-secondary mt-0.5">
                           {alloc.allocationId}
                         </div>
-                        <div className="text-[10px] text-slate-500 mt-0.5">
-                          {new Date(alloc.createdAt).toLocaleString()}
+                        <div className="text-[10px] text-slate-500 mt-0.5" suppressHydrationWarning>
+                          {new Date(alloc.createdAt).toISOString().replace('T', ' ').slice(0, 19)}
                         </div>
                       </td>
 
@@ -566,11 +510,11 @@ export default function DashboardPage() {
 
                       {/* Amount Paid */}
                       <td className="py-4 px-6">
-                        <div className="font-bold text-white">
-                          ₹{(payment.amountPaid || alloc.principalINR).toLocaleString()} {payment.currency || 'INR'}
+                        <div className="font-bold text-white" suppressHydrationWarning>
+                          ₹{(payment.amountPaid || alloc.principalINR).toLocaleString('en-US')} {payment.currency || 'INR'}
                         </div>
-                        <div className="text-[11px] text-secondary">
-                          Settlement: ₹{alloc.contractualSettlementINR?.toLocaleString()} ({alloc.multiplierFactor}x)
+                        <div className="text-[11px] text-secondary" suppressHydrationWarning>
+                          Settlement: ₹{alloc.contractualSettlementINR?.toLocaleString('en-US')} ({alloc.multiplierFactor}x)
                         </div>
                       </td>
 
@@ -625,27 +569,12 @@ export default function DashboardPage() {
                         )}
                       </td>
 
-                      {/* Action buttons (including admin verification for pending items) */}
+                      {/* Status action summary (Investor Read-Only; administrative verification restricted to /admin) */}
                       <td className="py-4 px-6 text-right">
                         {isPending && (
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => handleAdminVerify(alloc.allocationId, 'APPROVE')}
-                              disabled={verifyingId === alloc.allocationId}
-                              className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] shadow-sm transition-all"
-                              title="Admin: Confirm payment receipt and activate allocation"
-                            >
-                              {verifyingId === alloc.allocationId ? 'Verifying...' : 'Approve'}
-                            </button>
-                            <button
-                              onClick={() => handleAdminVerify(alloc.allocationId, 'REJECT')}
-                              disabled={verifyingId === alloc.allocationId}
-                              className="px-2.5 py-1.5 rounded-lg bg-rose-600/80 hover:bg-rose-500 text-white font-bold text-[11px] transition-all"
-                              title="Admin: Reject payment"
-                            >
-                              Reject
-                            </button>
-                          </div>
+                          <span className="text-xs text-amber-400/90 font-medium">
+                            Awaiting Admin Review
+                          </span>
                         )}
                         {isConfirmed && (
                           <span className="text-xs text-slate-400 font-mono">
@@ -729,7 +658,7 @@ export default function DashboardPage() {
                 >
                   {INVESTMENT_PLANS.map((plan) => (
                     <option key={plan.id} value={plan.id}>
-                      {plan.name} — ₹{plan.principalINR.toLocaleString()} INR ({plan.multiplier}x return)
+                      {plan.name} — ₹{plan.principalINR.toLocaleString('en-US')} INR ({plan.multiplier}x return · {plan.maturityNote})
                     </option>
                   ))}
                 </select>
@@ -737,18 +666,37 @@ export default function DashboardPage() {
 
               {/* Quotation Preview */}
               <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-950/40 to-slate-900 border border-blue-500/30 space-y-2.5">
-                <div className="flex items-center justify-between text-xs text-slate-300">
+                <div className="flex items-center justify-between text-xs text-slate-300" suppressHydrationWarning>
                   <span>Investment Amount:</span>
-                  <strong className="text-white">₹{selectedPlan.principalINR.toLocaleString()} INR</strong>
+                  <strong className="text-white">₹{selectedPlan.principalINR.toLocaleString('en-US')} INR</strong>
+                </div>
+                <div className="flex items-center justify-between text-xs text-slate-300" suppressHydrationWarning>
+                  <span>Contractual Allocation:</span>
+                  <strong className="text-white">₹{selectedPlan.contractualAllocationINR.toLocaleString('en-US')} INR ({selectedPlan.multiplier}x)</strong>
+                </div>
+                <div className="flex items-center justify-between text-xs text-slate-300">
+                  <span>Maturity Schedule:</span>
+                  <strong className="text-amber-300">{selectedPlan.maturityNote}</strong>
                 </div>
                 <div className="flex items-center justify-between text-xs text-slate-300">
                   <span>Unit Reference Price:</span>
                   <strong className="text-emerald-400">₹{custodyData?.currentReferencePriceINR || '0.20'} / LIORA</strong>
                 </div>
-                <div className="flex items-center justify-between text-xs font-bold pt-2.5 border-t border-blue-500/20">
+                <div className="flex items-center justify-between text-xs font-bold pt-2.5 border-t border-blue-500/20" suppressHydrationWarning>
                   <span className="text-white">Estimated Allocation:</span>
-                  <span className="text-base text-[var(--brand-accent)] font-extrabold">{estimatedTokens.toLocaleString()} LIORA</span>
+                  <span className="text-base text-[var(--brand-accent)] font-extrabold">{estimatedTokens.toLocaleString('en-US')} LIORA</span>
                 </div>
+              </div>
+
+              {/* Regulatory & Risk Disclaimer */}
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300/90 space-y-1">
+                <div className="font-semibold flex items-center gap-1.5 text-amber-200">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Regulatory &amp; Non-Guaranteed Return Disclosure</span>
+                </div>
+                <p className="leading-relaxed">
+                  Target multipliers represent contractual collateral sizing benchmarks under pre-launch offering schedules. Token market valuations fluctuate, and secondary market returns are not guaranteed. For Tier 05 and Tier 06, settlement timeline (Month 12 vs 13) remains subject to final management determination.
+                </p>
               </div>
 
               {/* Payment Rail */}

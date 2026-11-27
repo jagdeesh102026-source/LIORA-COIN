@@ -119,3 +119,12 @@ desktop.ini
 .vscode/
 *.sublime-project
 *.sublime-workspace
+
+# ------------------------------------------------------------------------------
+# 6. Confidential VPS Security Assessments & Raw Verification Outputs
+# ------------------------------------------------------------------------------
+docs/VPS_SECURITY_ASSESSMENT.md
+*vps_verification*
+*vps_audit_raw*
+*.vps-output.txt
+*.sudo-output.txt

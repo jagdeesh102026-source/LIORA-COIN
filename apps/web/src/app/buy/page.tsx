@@ -7,6 +7,8 @@ import { Badge } from '../../components/Badge';
 import { TestnetPurchaseTerminal } from '../../components/TestnetPurchaseTerminal';
 import { PrelaunchOfferingCard } from '../../components/prelaunch/PrelaunchOfferingCard';
 import { useWeb3Wallet } from '../../hooks/useWeb3Wallet';
+import { useDemoStore } from '../../lib/demo/useDemoStore';
+import { isTestnetSandboxEnabled } from '../../config/tokenConfig';
 import { AllocationEngine } from '../../lib/commerce/allocationEngine';
 import { ExchangeRatePolicy } from '../../lib/commerce/exchangeRatePolicy';
 import { 
@@ -42,7 +44,10 @@ export default function BuyPage() {
     switchToBscMainnet 
   } = useWeb3Wallet();
 
-  // Purchase Mode: 'prelaunch' (30-day offering curve), 'testnet' (BSC Testnet #97) or 'fiat' (multi-currency pricing simulation)
+  const { activeUser } = useDemoStore();
+  const isDevSandbox = isTestnetSandboxEnabled();
+
+  // Purchase Mode: 'prelaunch' (30-day offering curve), 'testnet' (dev-only BSC Testnet #97) or 'fiat' (multi-currency pricing simulator)
   const [purchaseMode, setPurchaseMode] = useState<'prelaunch' | 'testnet' | 'fiat'>('prelaunch');
 
   // Multi-currency state
@@ -88,15 +93,15 @@ export default function BuyPage() {
     };
   }, [isCurrencyDropdownOpen]);
 
-  // Reference pricing parameters
-  const tokenPriceUsd = 0.10; // Provisional reference price $0.10 USD
+  // Canonical reference pricing parameters
+  const tokenPriceInr = 0.20; // Official launch benchmark price ₹0.20 INR
   const activeCurrencyConfig = FIAT_CURRENCY_REGISTRY[selectedCurrency];
 
   // USD exchange rate reference from registry (avoid hardcoding 84.50)
   const usdConfig = FIAT_CURRENCY_REGISTRY.USD;
   const usdRateToInr = usdConfig ? usdConfig.provisionalExchangeRateToInr : 84.50;
-  // Canonical token price in INR base units
-  const tokenPriceInr = tokenPriceUsd * usdRateToInr; // e.g. $0.10 * 84.50 = 8.45 INR
+  // Unit token price in USD derived from canonical INR benchmark
+  const tokenPriceUsd = tokenPriceInr / usdRateToInr; // e.g. 0.20 / 84.50 ≈ $0.002367 USD
 
   // Derive quote based on selected currency
   const quote = useMemo(() => {
@@ -224,7 +229,7 @@ export default function BuyPage() {
           </div>
           <h1 className="text-3xl sm:text-5xl font-extrabold text-white">Purchase Liora Coin</h1>
           <p className="text-secondary text-sm sm:text-base leading-relaxed">
-            Acquire Liora Coin (proposed symbol: LIORA) tokens with authorized fiat payments. Minimum order requirement is <strong>₹1,00,000 INR</strong> (or international currency equivalent). Delivered directly to your self-custodial wallet on BNB Smart Chain.
+            Acquire Liora Coin (LIORA) tokens with authorized fiat payments. Minimum order requirement is <strong>₹1,00,000 INR</strong> (or international currency equivalent). Delivered directly to your self-custodial wallet on BNB Smart Chain.
           </p>
         </div>
 
@@ -265,20 +270,22 @@ export default function BuyPage() {
           </span>
         </button>
 
-        <button
-          type="button"
-          onClick={() => setPurchaseMode('testnet')}
-          className={`py-3 px-5 text-sm font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
-            purchaseMode === 'testnet'
-              ? 'border-[var(--brand-accent)] text-white bg-blue-500/10 rounded-t-xl'
-              : 'border-transparent text-secondary hover:text-white'
-          }`}
-        >
-          <span>⚡ Testnet BNB Purchase</span>
-          <span className="px-2 py-0.5 rounded text-[10px] bg-blue-500/20 text-[var(--brand-accent)] font-semibold">
-            Sandbox #97
-          </span>
-        </button>
+        {isDevSandbox && (
+          <button
+            type="button"
+            onClick={() => setPurchaseMode('testnet')}
+            className={`py-3 px-5 text-sm font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
+              purchaseMode === 'testnet'
+                ? 'border-[var(--brand-accent)] text-white bg-blue-500/10 rounded-t-xl'
+                : 'border-transparent text-secondary hover:text-white'
+            }`}
+          >
+            <span>⚡ Testnet BNB Purchase</span>
+            <span className="px-2 py-0.5 rounded text-[10px] bg-blue-500/20 text-[var(--brand-accent)] font-semibold">
+              Sandbox #97
+            </span>
+          </button>
+        )}
 
         <button
           type="button"
@@ -297,8 +304,8 @@ export default function BuyPage() {
       </div>
 
       {purchaseMode === 'prelaunch' ? (
-        <PrelaunchOfferingCard userWalletAddress={address || undefined} userId="usr_demo_buyer" />
-      ) : purchaseMode === 'testnet' ? (
+        <PrelaunchOfferingCard userWalletAddress={address || activeUser?.walletAddress || undefined} userId={activeUser?.id} />
+      ) : purchaseMode === 'testnet' && isDevSandbox ? (
         <TestnetPurchaseTerminal />
       ) : (
         <>
@@ -573,19 +580,21 @@ export default function BuyPage() {
                         Liora Coin operates strictly on <strong>BNB Smart Chain</strong>. Please switch your wallet network to continue.
                       </p>
                       <div className="flex items-center gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={switchToBscTestnet}
-                          className="px-3 py-1.5 rounded-lg btn-metallic text-xs font-semibold text-white"
-                        >
-                          Switch to BSC Testnet (#97)
-                        </button>
+                        {isDevSandbox && (
+                          <button
+                            type="button"
+                            onClick={switchToBscTestnet}
+                            className="px-3 py-1.5 rounded-lg border border-[var(--border-prominent)] bg-[var(--bg-elevated)] text-xs text-white"
+                          >
+                            Switch to BSC Testnet (#97)
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={switchToBscMainnet}
-                          className="px-3 py-1.5 rounded-lg border border-[var(--border-prominent)] bg-[var(--bg-elevated)] text-xs text-white"
+                          className="px-3 py-1.5 rounded-lg btn-metallic text-xs font-semibold text-white"
                         >
-                          BSC Mainnet (#56)
+                          Switch to BSC Mainnet (#56)
                         </button>
                       </div>
                     </div>
@@ -627,9 +636,9 @@ export default function BuyPage() {
                 <span className="text-white font-semibold">1 {selectedCurrency} = ₹{quote.rateToInr.toFixed(2)} INR</span>
               </div>
               <div className="flex justify-between">
-                <span>Provisional Token Price:</span>
+                <span>Benchmark Token Price:</span>
                 <span className="text-white font-semibold">
-                  ${tokenPriceUsd.toFixed(2)} USD (~{activeCurrencyConfig.symbol}{(tokenPriceInr / quote.rateToInr).toFixed(selectedCurrency === 'INR' ? 2 : 4)} {selectedCurrency})
+                  ₹{tokenPriceInr.toFixed(2)} INR (~${tokenPriceUsd.toFixed(5)} USD)
                 </span>
               </div>
               <div className="flex justify-between">

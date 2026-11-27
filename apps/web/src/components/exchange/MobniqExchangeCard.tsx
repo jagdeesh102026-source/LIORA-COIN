@@ -34,7 +34,7 @@ export const MobniqExchangeCard: React.FC<MobniqExchangeCardProps> = ({
   compact = false,
 }) => {
   const isDev = isTestnetSandboxEnabled();
-  const { tokens, calculateQuote, executeSwap } = useDemoStore();
+  const { isClientReady, tokens, calculateQuote, executeSwap } = useDemoStore();
 
   const [fromSymbol, setFromSymbol] = useState<TokenSymbol>(defaultFrom);
   const [toSymbol, setToSymbol] = useState<TokenSymbol>(defaultTo);
@@ -169,7 +169,7 @@ export const MobniqExchangeCard: React.FC<MobniqExchangeCardProps> = ({
           <div className="flex items-center gap-1.5">
             <span>Balance:</span>
             <span className="text-white font-semibold">
-              {fromToken ? fromToken.userBalance.toLocaleString(undefined, { maximumFractionDigits: 4 }) : '0.00'}
+              {isClientReady && fromToken ? fromToken.userBalance.toLocaleString('en-US', { maximumFractionDigits: 4 }) : '0.00'}
             </span>
             <button
               onClick={handleMax}
@@ -239,7 +239,7 @@ export const MobniqExchangeCard: React.FC<MobniqExchangeCardProps> = ({
           <div className="flex items-center gap-1.5">
             <span>Balance:</span>
             <span className="text-white font-semibold">
-              {toToken ? toToken.userBalance.toLocaleString(undefined, { maximumFractionDigits: 4 }) : '0.00'}
+              {isClientReady && toToken ? toToken.userBalance.toLocaleString('en-US', { maximumFractionDigits: 4 }) : '0.00'}
             </span>
           </div>
         </div>

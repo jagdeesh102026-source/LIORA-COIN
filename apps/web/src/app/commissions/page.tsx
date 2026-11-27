@@ -29,43 +29,36 @@ export default function CommissionsPage() {
   const [isClaiming, setIsClaiming] = useState(false);
   const [claimMessage, setClaimMessage] = useState<string | null>(null);
 
-  if (!isInitialized || !activeUser) {
-    return (
-      <div className="py-24 text-center space-y-3">
-        <div className="w-8 h-8 border-2 border-[var(--brand-accent)] border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-xs text-secondary">Authenticating commission records...</p>
-      </div>
-    );
-  }
+  const safeCommissions = userCommissions || [];
 
-  // Totals
+  // Totals (must execute unconditionally before any early return)
   const totalApprovedLiora = useMemo(() => {
-    return userCommissions
+    return safeCommissions
       .filter((c) => c.status === 'APPROVED' && (c.currency === 'LIORA' || c.currency === 'OXENIQ'))
       .reduce((sum, c) => sum + c.amount, 0);
-  }, [userCommissions]);
+  }, [safeCommissions]);
 
   const totalApprovedUsdt = useMemo(() => {
-    return userCommissions
+    return safeCommissions
       .filter((c) => c.status === 'APPROVED' && c.currency === 'USDT')
       .reduce((sum, c) => sum + c.amount, 0);
-  }, [userCommissions]);
+  }, [safeCommissions]);
 
   const totalPaidLiora = useMemo(() => {
-    return userCommissions
+    return safeCommissions
       .filter((c) => c.status === 'PAID' && (c.currency === 'LIORA' || c.currency === 'OXENIQ'))
       .reduce((sum, c) => sum + c.amount, 0);
-  }, [userCommissions]);
+  }, [safeCommissions]);
 
   const totalPaidUsdt = useMemo(() => {
-    return userCommissions
+    return safeCommissions
       .filter((c) => c.status === 'PAID' && c.currency === 'USDT')
       .reduce((sum, c) => sum + c.amount, 0);
-  }, [userCommissions]);
+  }, [safeCommissions]);
 
   // Filtered commissions
   const filtered = useMemo(() => {
-    return userCommissions.filter((c) => {
+    return safeCommissions.filter((c) => {
       if (currencyFilter !== 'ALL') {
         const normCurr = c.currency === 'OXENIQ' ? 'LIORA' : c.currency;
         if (normCurr !== currencyFilter) return false;
@@ -74,7 +67,16 @@ export default function CommissionsPage() {
       if (levelFilter !== 'ALL' && c.level !== levelFilter) return false;
       return true;
     });
-  }, [userCommissions, currencyFilter, statusFilter, levelFilter]);
+  }, [safeCommissions, currencyFilter, statusFilter, levelFilter]);
+
+  if (!isInitialized || !activeUser) {
+    return (
+      <div className="py-24 text-center space-y-3">
+        <div className="w-8 h-8 border-2 border-[var(--brand-accent)] border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-xs text-secondary">Authenticating commission records...</p>
+      </div>
+    );
+  }
 
   const handleClaim = () => {
     setIsClaiming(true);

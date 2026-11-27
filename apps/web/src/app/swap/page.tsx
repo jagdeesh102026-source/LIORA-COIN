@@ -215,11 +215,11 @@ export default function SwapPage() {
                       {tier.lockDurationMonths} Mo Lock
                     </span>
                   </div>
-                  <div className="text-[11px] text-secondary font-mono">
-                    Principal: ₹{tier.principalINR.toLocaleString()} INR
+                  <div className="text-[11px] text-secondary font-mono" suppressHydrationWarning>
+                    Principal: ₹{tier.principalINR.toLocaleString('en-US')} INR
                   </div>
-                  <div className="text-[11px] text-emerald-400 font-semibold flex items-center justify-between">
-                    <span>Settlement: ₹{tier.contractualAllocationINR.toLocaleString()}</span>
+                  <div className="text-[11px] text-emerald-400 font-semibold flex items-center justify-between" suppressHydrationWarning>
+                    <span suppressHydrationWarning>Settlement: ₹{tier.contractualAllocationINR.toLocaleString('en-US')}</span>
                     <span className="text-[10px] text-amber-300 font-mono font-bold">{tier.multiplierFactor}×</span>
                   </div>
                 </div>
@@ -256,8 +256,8 @@ export default function SwapPage() {
                   type="button"
                   onClick={() => setActiveTab('MAINNET_STATUS')}
                   className={`px-3 py-1 rounded-lg font-bold text-xs transition-all ${activeTab === 'MAINNET_STATUS'
-                      ? 'bg-emerald-500 text-black'
-                      : 'text-secondary hover:text-white'
+                    ? 'bg-emerald-500 text-black'
+                    : 'text-secondary hover:text-white'
                     }`}
                 >
                   🔒 Mainnet Read-Only
@@ -266,8 +266,8 @@ export default function SwapPage() {
                   type="button"
                   onClick={() => setActiveTab('TESTNET_SANDBOX')}
                   className={`px-3 py-1 rounded-lg font-bold text-xs transition-all ${activeTab === 'TESTNET_SANDBOX'
-                      ? 'bg-[var(--brand-accent)] text-black'
-                      : 'text-secondary hover:text-white'
+                    ? 'bg-[var(--brand-accent)] text-black'
+                    : 'text-secondary hover:text-white'
                     }`}
                 >
                   🧪 Testnet Sandbox
@@ -276,8 +276,8 @@ export default function SwapPage() {
                   type="button"
                   onClick={() => setActiveTab('SIMULATION')}
                   className={`px-3 py-1 rounded-lg font-bold text-xs transition-all ${activeTab === 'SIMULATION'
-                      ? 'bg-[var(--brand-accent)] text-black'
-                      : 'text-secondary hover:text-white'
+                    ? 'bg-[var(--brand-accent)] text-black'
+                    : 'text-secondary hover:text-white'
                     }`}
                 >
                   📊 Multi-Asset Demo

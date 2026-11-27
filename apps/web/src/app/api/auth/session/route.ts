@@ -26,7 +26,20 @@ export async function GET(req: NextRequest) {
     if (!user || user.accountStatus !== 'ACTIVE') {
       return NextResponse.json(
         { authenticated: false, error: 'User not found or account inactive', user: null, wallets: [] },
-        { status: 404 }
+        { status: 403 }
+      );
+    }
+
+    const isProdOrStaging =
+      process.env.NODE_ENV === 'production' ||
+      process.env.STAGING === 'true' ||
+      process.env.OXENIQ_ENV === 'production' ||
+      process.env.OXENIQ_ENV === 'staging';
+
+    if (user.isDevelopmentOnly && isProdOrStaging) {
+      return NextResponse.json(
+        { authenticated: false, error: 'DEVELOPMENT_ACCOUNT_PROHIBITED', user: null, wallets: [] },
+        { status: 403 }
       );
     }
 

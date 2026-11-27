@@ -2,15 +2,15 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { 
-  Bot, 
-  Activity, 
-  BarChart3, 
-  Sparkles, 
-  ShieldAlert, 
-  Settings, 
-  Lock, 
-  Unlock, 
+import {
+  Bot,
+  Activity,
+  BarChart3,
+  Sparkles,
+  ShieldAlert,
+  Settings,
+  Lock,
+  Unlock,
   ArrowRight,
   TrendingUp,
   Cpu,
@@ -35,7 +35,7 @@ export default function TradingBotPage() {
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isPlansModalOpen, setIsPlansModalOpen] = useState(false);
 
-  const isAdmin = activeUser?.role === 'ADMIN' || activeUser?.username === 'admin_dan';
+  const isAdmin = activeUser?.role === 'ADMIN';
 
   if (PREVIEW_CONFIG.hideTradingBot) {
     return (
@@ -65,8 +65,8 @@ export default function TradingBotPage() {
             <div>• Non-custodial DEX exchange functionality remains active in demo mode.</div>
           </div>
           <div className="pt-2">
-            <Link 
-              href="/swap" 
+            <Link
+              href="/swap"
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl btn-metallic text-xs font-bold text-white shadow-lg hover:opacity-95 transition-all"
             >
               <span>Return to DEX Swap Terminal</span>
@@ -91,11 +91,10 @@ export default function TradingBotPage() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setActiveTab('signals')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
-              activeTab === 'signals'
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${activeTab === 'signals'
                 ? 'btn-metallic text-white shadow-md'
                 : 'bg-[var(--bg-elevated)] text-secondary hover:text-white border border-[var(--border-subtle)]'
-            }`}
+              }`}
           >
             <Activity className="w-4 h-4 text-amber-400" />
             <span>ALGOX V6_1_24 Signals</span>
@@ -103,11 +102,10 @@ export default function TradingBotPage() {
 
           <button
             onClick={() => setActiveTab('analytics')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
-              activeTab === 'analytics'
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${activeTab === 'analytics'
                 ? 'btn-metallic text-white shadow-md'
                 : 'bg-[var(--bg-elevated)] text-secondary hover:text-white border border-[var(--border-subtle)]'
-            }`}
+              }`}
           >
             <BarChart3 className="w-4 h-4 text-emerald-400" />
             <span>Paper-Trading Analytics</span>
@@ -115,11 +113,10 @@ export default function TradingBotPage() {
 
           <button
             onClick={() => setActiveTab('plans')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
-              activeTab === 'plans'
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${activeTab === 'plans'
                 ? 'btn-metallic text-white shadow-md'
                 : 'bg-[var(--bg-elevated)] text-secondary hover:text-white border border-[var(--border-subtle)]'
-            }`}
+              }`}
           >
             <Sparkles className="w-4 h-4 text-blue-400" />
             <span>Subscription Plans</span>

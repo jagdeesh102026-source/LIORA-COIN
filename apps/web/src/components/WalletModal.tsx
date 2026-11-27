@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useWeb3Wallet, EIP6963ProviderDetail } from '../hooks/useWeb3Wallet';
+import { isTestnetSandboxEnabled } from '../config/tokenConfig';
 import { 
   X, 
   ShieldCheck, 
@@ -189,12 +190,14 @@ export const WalletModal: React.FC<WalletModalProps> = ({ isOpen, onClose }) => 
                     Liora Coin operates strictly on <strong>BNB Smart Chain</strong>. Please switch your wallet network to continue.
                   </p>
                   <div className="flex items-center gap-2 pt-1">
-                    <button
-                      onClick={switchToBscTestnet}
-                      className="px-3 py-1.5 rounded-lg btn-metallic text-xs font-semibold text-white shadow-sm"
-                    >
-                      Switch to BSC Testnet (#97)
-                    </button>
+                    {isTestnetSandboxEnabled() && (
+                      <button
+                        onClick={switchToBscTestnet}
+                        className="px-3 py-1.5 rounded-lg btn-metallic text-xs font-semibold text-white shadow-sm"
+                      >
+                        Switch to BSC Testnet (#97)
+                      </button>
+                    )}
                     <button
                       onClick={switchToBscMainnet}
                       className="px-3 py-1.5 rounded-lg border border-[var(--border-prominent)] bg-[var(--bg-elevated)] hover:bg-[var(--border-subtle)] text-xs text-white"

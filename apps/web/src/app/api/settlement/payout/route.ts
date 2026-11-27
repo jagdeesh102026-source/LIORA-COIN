@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { SettlementPersistentStore } from '@/lib/server/settlement/settlementPersistentStore';
 import { requireSettlementAdmin } from '@/lib/server/settlement/settlementAuth';
+import { validateCsrfProtection } from '@/lib/server/adminAuth';
 
 const recordPayoutSchema = z.object({
   investmentId: z.string().min(3),
@@ -21,6 +22,18 @@ const correctPayoutSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    const csrfCheck = validateCsrfProtection(req);
+    if (!csrfCheck.valid) {
+      return NextResponse.json({ success: false, error: 'CSRF_REJECTED', message: csrfCheck.reason }, { status: 403 });
+    }
+
+    if (process.env.NODE_ENV === 'production' || process.env.OXENIQ_ENV === 'production') {
+      return NextResponse.json(
+        { success: false, error: 'PAYOUT_EXECUTION_DISABLED', message: 'Manual payout execution is disabled in production.' },
+        { status: 403 }
+      );
+    }
+
     const chainIdHeader = req.headers.get('x-chain-id');
     const chainId = chainIdHeader ? parseInt(chainIdHeader, 10) : undefined;
     const sandboxCheck = SettlementPersistentStore.enforceSandboxRestrictions({ chainId });
@@ -64,6 +77,18 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
+    const csrfCheck = validateCsrfProtection(req);
+    if (!csrfCheck.valid) {
+      return NextResponse.json({ success: false, error: 'CSRF_REJECTED', message: csrfCheck.reason }, { status: 403 });
+    }
+
+    if (process.env.NODE_ENV === 'production' || process.env.OXENIQ_ENV === 'production') {
+      return NextResponse.json(
+        { success: false, error: 'PAYOUT_EXECUTION_DISABLED', message: 'Payout modifications are disabled in production.' },
+        { status: 403 }
+      );
+    }
+
     const chainIdHeader = req.headers.get('x-chain-id');
     const chainId = chainIdHeader ? parseInt(chainIdHeader, 10) : undefined;
     const sandboxCheck = SettlementPersistentStore.enforceSandboxRestrictions({ chainId });

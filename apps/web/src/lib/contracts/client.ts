@@ -1,4 +1,4 @@
-import { createPublicClient, http, formatUnits, type Address } from 'viem';
+import { createPublicClient, fallback, http, formatUnits, type Address } from 'viem';
 import { bsc, bscTestnet } from 'viem/chains';
 import {
   BSC_MAINNET_CONFIG,
@@ -17,16 +17,36 @@ import { ALLOCATION_MANAGER_ABI } from './allocationManagerAbi';
 import { testnetSaleAbi } from './testnetSaleAbi';
 
 /**
+ * Ordered BSC Mainnet read-only JSON-RPC endpoints for automatic failover.
+ */
+export const BSC_MAINNET_RPC_URLS: string[] = Array.from(
+  new Set(
+    [
+      process.env.NEXT_PUBLIC_BSC_MAINNET_RPC,
+      BSC_MAINNET_CONFIG.rpcUrl,
+      'https://bsc-dataseed1.defibit.io/',
+      'https://bsc-dataseed1.ninicoin.io/',
+      'https://bsc.publicnode.com',
+    ].filter((u): u is string => Boolean(u && u.trim()))
+  )
+);
+
+/**
  * Dedicated read-only public client for BNB Smart Chain Mainnet (Chain ID 56).
- * Strictly read-only; never connects private keys or submits mutating transactions.
+ * Strictly read-only; uses ordered multi-RPC fallback transport to handle single-node rate limits/timeouts.
  */
 export const bscMainnetPublicClient = createPublicClient({
   chain: bsc,
-  transport: http(process.env.NEXT_PUBLIC_BSC_MAINNET_RPC || BSC_MAINNET_CONFIG.rpcUrl, {
-    retryCount: 3,
-    retryDelay: 1000,
-    timeout: 10_000,
-  }),
+  transport: fallback(
+    BSC_MAINNET_RPC_URLS.map((url) =>
+      http(url, {
+        retryCount: 1,
+        retryDelay: 500,
+        timeout: 10_000,
+      })
+    ),
+    { rank: false, retryCount: 2, retryDelay: 500 }
+  ),
 });
 
 /**
@@ -337,6 +357,27 @@ export async function fetchOnChainSaleData(
   };
 }
 
+async function withMainnetRpcTimeout<T>(operation: Promise<T>, label: string, timeoutMs = 15_000): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      operation,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          reject(new Error(`BSC_MAINNET_RPC_TIMEOUT: ${label} timed out after ${timeoutMs}ms across fallback providers.`));
+        }, timeoutMs);
+      }),
+    ]);
+  } catch (err: any) {
+    if (err?.message?.startsWith('BSC_MAINNET_RPC_TIMEOUT:')) {
+      throw err;
+    }
+    throw new Error(`BSC_MAINNET_RPC_ERROR: ${label} failed (${err?.shortMessage || err?.message || 'Unknown RPC error'}).`);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 /**
  * Reads official token overview and treasury balances from BNB Smart Chain Mainnet.
  * Live RPC query at contract 0xE7B7fAd9EFDE37b3c9d47216044ECed6f7fd630A.
@@ -346,40 +387,43 @@ export async function fetchMainnetTokenOverview(): Promise<MainnetTokenOverview>
   const treasuryAddr = BSC_MAINNET_OPERATING_TREASURY_ADDRESS as Address;
   const reserveVaultAddr = BSC_MAINNET_LIORA_RESERVE_VAULT_ADDRESS as Address;
 
-  const [name, symbol, decimals, totalSupply, treasuryBalanceRaw, reserveVaultBalanceRaw] = await Promise.all([
-    bscMainnetPublicClient.readContract({
-      address: tokenAddr,
-      abi: LIORA_TOKEN_ABI,
-      functionName: 'name',
-    }),
-    bscMainnetPublicClient.readContract({
-      address: tokenAddr,
-      abi: LIORA_TOKEN_ABI,
-      functionName: 'symbol',
-    }),
-    bscMainnetPublicClient.readContract({
-      address: tokenAddr,
-      abi: LIORA_TOKEN_ABI,
-      functionName: 'decimals',
-    }),
-    bscMainnetPublicClient.readContract({
-      address: tokenAddr,
-      abi: LIORA_TOKEN_ABI,
-      functionName: 'totalSupply',
-    }),
-    bscMainnetPublicClient.readContract({
-      address: tokenAddr,
-      abi: LIORA_TOKEN_ABI,
-      functionName: 'balanceOf',
-      args: [treasuryAddr],
-    }),
-    bscMainnetPublicClient.readContract({
-      address: tokenAddr,
-      abi: LIORA_TOKEN_ABI,
-      functionName: 'balanceOf',
-      args: [reserveVaultAddr],
-    }),
-  ]);
+  const [name, symbol, decimals, totalSupply, treasuryBalanceRaw, reserveVaultBalanceRaw] = await withMainnetRpcTimeout(
+    Promise.all([
+      bscMainnetPublicClient.readContract({
+        address: tokenAddr,
+        abi: LIORA_TOKEN_ABI,
+        functionName: 'name',
+      }),
+      bscMainnetPublicClient.readContract({
+        address: tokenAddr,
+        abi: LIORA_TOKEN_ABI,
+        functionName: 'symbol',
+      }),
+      bscMainnetPublicClient.readContract({
+        address: tokenAddr,
+        abi: LIORA_TOKEN_ABI,
+        functionName: 'decimals',
+      }),
+      bscMainnetPublicClient.readContract({
+        address: tokenAddr,
+        abi: LIORA_TOKEN_ABI,
+        functionName: 'totalSupply',
+      }),
+      bscMainnetPublicClient.readContract({
+        address: tokenAddr,
+        abi: LIORA_TOKEN_ABI,
+        functionName: 'balanceOf',
+        args: [treasuryAddr],
+      }),
+      bscMainnetPublicClient.readContract({
+        address: tokenAddr,
+        abi: LIORA_TOKEN_ABI,
+        functionName: 'balanceOf',
+        args: [reserveVaultAddr],
+      }),
+    ]),
+    'fetchMainnetTokenOverview'
+  );
 
   return {
     address: BSC_MAINNET_LIORA_TOKEN_ADDRESS,
@@ -409,12 +453,15 @@ export async function fetchMainnetUserTokenBalance(
   userAddress: string,
   contractAddress: string = BSC_MAINNET_LIORA_TOKEN_ADDRESS
 ): Promise<{ raw: bigint; formatted: string }> {
-  const raw = await bscMainnetPublicClient.readContract({
-    address: contractAddress as Address,
-    abi: LIORA_TOKEN_ABI,
-    functionName: 'balanceOf',
-    args: [userAddress as Address],
-  });
+  const raw = await withMainnetRpcTimeout(
+    bscMainnetPublicClient.readContract({
+      address: contractAddress as Address,
+      abi: LIORA_TOKEN_ABI,
+      functionName: 'balanceOf',
+      args: [userAddress as Address],
+    }),
+    'fetchMainnetUserTokenBalance'
+  );
 
   return {
     raw,

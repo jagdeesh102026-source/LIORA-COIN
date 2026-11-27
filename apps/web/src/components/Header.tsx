@@ -11,17 +11,17 @@ import { useTestnetBalances } from '../hooks/useTestnetBalances';
 import { useDemoStore } from '../lib/demo/useDemoStore';
 import { PREVIEW_CONFIG } from '../config/previewConfig';
 import { isTestnetSandboxEnabled } from '../config/tokenConfig';
-import { 
-  Menu, 
-  X, 
-  Wallet, 
-  Check, 
-  Copy, 
-  Network, 
-  Coins, 
-  User, 
-  ChevronDown, 
-  ShieldCheck, 
+import {
+  Menu,
+  X,
+  Wallet,
+  Check,
+  Copy,
+  Network,
+  Coins,
+  User,
+  ChevronDown,
+  ShieldCheck,
   Sparkles,
   Zap,
   Lock,
@@ -104,7 +104,7 @@ export const Header: React.FC = () => {
         </div>
       )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-        <Logo size="md" href={isUserAuthenticated ? '/dashboard' : '/auth'} />
+        <Logo size="md" href="/" />
 
         {/* Desktop Navigation */}
         <nav className="hidden xl:flex items-center gap-1">
@@ -114,11 +114,10 @@ export const Header: React.FC = () => {
               <Link
                 key={link.name}
                 href={link.href}
-                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                  isActive
-                    ? 'text-white bg-[var(--bg-elevated)] border border-[var(--border-prominent)] shadow-sm'
-                    : 'text-secondary hover:text-white hover:bg-[var(--bg-elevated)]/50'
-                }`}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${isActive
+                  ? 'text-white bg-[var(--bg-elevated)] border border-[var(--border-prominent)] shadow-sm'
+                  : 'text-secondary hover:text-white hover:bg-[var(--bg-elevated)]/50'
+                  }`}
               >
                 <span>{link.name}</span>
                 {link.badge && (
@@ -171,9 +170,9 @@ export const Header: React.FC = () => {
         </nav>
 
         {/* Right Action Bar (Always visible with responsive elements) */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3" suppressHydrationWarning>
           {/* User Account Pill or Sign In CTA (hidden on very small screens) */}
-          <div className="hidden sm:flex items-center">
+          <div className="hidden sm:flex items-center" suppressHydrationWarning>
             {isUserAuthenticated && activeUser ? (
               <div className="flex items-center gap-1.5">
                 <Link
@@ -214,11 +213,10 @@ export const Header: React.FC = () => {
           {/* Web3 Network Badge */}
           {isWalletConnected && (
             <span
-              className={`hidden md:flex px-2.5 py-1 text-xs rounded-full border items-center gap-1.5 ${
-                isSupportedChain
-                  ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-                  : 'border-amber-500/30 bg-amber-500/10 text-amber-400'
-              }`}
+              className={`hidden md:flex px-2.5 py-1 text-xs rounded-full border items-center gap-1.5 ${isSupportedChain
+                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                : 'border-amber-500/30 bg-amber-500/10 text-amber-400'
+                }`}
             >
               <Network className="w-3.5 h-3.5" />
               <span>{chainName || 'BSC Testnet'}</span>
@@ -305,7 +303,7 @@ export const Header: React.FC = () => {
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="xl:hidden border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-4 py-4 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
+          <div className="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]" suppressHydrationWarning>
             {isUserAuthenticated && activeUser ? (
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
@@ -346,11 +344,10 @@ export const Header: React.FC = () => {
                   key={link.name}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between ${
-                    isActive
-                      ? 'text-white bg-[var(--bg-elevated)] border border-[var(--border-prominent)]'
-                      : 'text-secondary hover:text-white'
-                  }`}
+                  className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between ${isActive
+                    ? 'text-white bg-[var(--bg-elevated)] border border-[var(--border-prominent)]'
+                    : 'text-secondary hover:text-white'
+                    }`}
                 >
                   <span>{link.name}</span>
                   {link.badge && (

@@ -3,6 +3,8 @@ import { z } from 'zod';
 import crypto from 'crypto';
 import { serverDb, hashPasswordScrypt } from '@/lib/server/db';
 import {
+  validateCsrfProtection,
+  getSessionCookieOptions,
   SESSION_COOKIE_NAME,
   LEGACY_SESSION_COOKIE_NAME,
 } from '@/lib/server/adminAuth';
@@ -19,6 +21,14 @@ const registerSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    const csrfCheck = validateCsrfProtection(req);
+    if (!csrfCheck.valid) {
+      return NextResponse.json(
+        { success: false, error: 'CSRF_REJECTED', message: csrfCheck.reason },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const parsed = registerSchema.safeParse(body);
 
@@ -69,11 +79,12 @@ export async function POST(req: NextRequest) {
       assignedWallet = '0x' + hash.slice(0, 40);
     }
 
-    // Link verified wallet in database
+    // Link verified wallet in database (default to BSC Mainnet 56 in production, 97 in dev)
+    const defaultChainId = process.env.NODE_ENV === 'production' ? 56 : 97;
     await serverDb.linkVerifiedWallet({
       walletAddress: assignedWallet,
       userId: user.id,
-      chainId: 97,
+      chainId: defaultChainId,
       signatureProof: `registration_derived_${user.id}`,
       nonceChallenge: `reg_${Date.now()}`,
     });
@@ -106,13 +117,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax' as const,
-      path: '/',
-      maxAge: 24 * 3600,
-    };
+    const cookieOptions = getSessionCookieOptions(24 * 3600);
 
     response.cookies.set(SESSION_COOKIE_NAME, session.sessionIdentifier, cookieOptions);
     response.cookies.set(LEGACY_SESSION_COOKIE_NAME, session.sessionIdentifier, cookieOptions);

@@ -28,7 +28,7 @@ export const Footer: React.FC = () => {
             <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Ecosystem</h4>
             <ul className="space-y-2 text-sm">
               {!PREVIEW_CONFIG.hideTradingBot && (
-                <li><Link href="/trading-bot" className="hover:text-white transition-colors text-amber-300/90 font-medium">Trading Bot (ALGOX)</Link></li>
+                <li><Link href="/trading-bot" className="hover:text-white transition-colors text-amber-300/90 font-medium">Trading Bot</Link></li>
               )}
               <li><Link href="/buy" className="hover:text-white transition-colors">Token Purchases (INR)</Link></li>
               <li><Link href="/ecosystem" className="hover:text-white transition-colors">Components</Link></li>
@@ -42,10 +42,10 @@ export const Footer: React.FC = () => {
           <div>
             <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Resources</h4>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/docs" className="hover:text-white transition-colors">Whitepaper Overview</Link></li>
-              <li><Link href="/docs" className="hover:text-white transition-colors">Smart Contract Specs</Link></li>
-              <li><Link href="/docs" className="hover:text-white transition-colors">Security Disclosures</Link></li>
-              <li><Link href="/docs" className="hover:text-white transition-colors">Developer Guide</Link></li>
+              <li><Link href="/docs?tab=whitepaper" className="hover:text-white transition-colors">Whitepaper Overview</Link></li>
+              <li><Link href="/docs?tab=contracts" className="hover:text-white transition-colors">Smart Contract Specs</Link></li>
+              <li><Link href="/docs?tab=security" className="hover:text-white transition-colors">Security Disclosures</Link></li>
+              <li><Link href="/docs?tab=developer" className="hover:text-white transition-colors">Developer Guide</Link></li>
             </ul>
           </div>
         </div>
@@ -53,9 +53,7 @@ export const Footer: React.FC = () => {
         {/* Legal Risk Disclosure & Copyright */}
         <div className="pt-8 space-y-4 text-xs text-muted">
           <p className="leading-relaxed">
-            <strong>Disclosures:</strong> Liora Coin (proposed symbol: LIORA, pending on-chain contract confirmation) is a market-priced digital utility token platform. It is not a fiat-pegged stablecoin,
-            nor does it represent guaranteed monetary returns or equity. Token allocation, liquidity reserves,
-            and cross-chain mechanisms operate via verified smart contract interfaces (including confirmed LIORA UUPS proxy contracts on BNB Smart Chain).
+            <strong>Disclosures:</strong> Liora Coin (LIORA) is a digital utility token ecosystem on BNB Smart Chain (BEP-20). Official smart contracts are deployed and verified on BSC Mainnet (Token Proxy: 0xE7B7fAd9EFDE37b3c9d47216044ECed6f7fd630A, Reserve Vault: 0x244865302a1643702ACB66181DBd898F714EF6e0, Timelock: 0xd03A64C31E2464DD2A7d69B538729A690b4ab177). Website operating in secure read-only mode with transactions and open-market DEX trading staged pending formal regulatory and liquidity launch. It is not a fiat-pegged stablecoin, nor does it represent guaranteed monetary returns, deposits, or equity.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-[var(--border-subtle)] text-[11px]">
             <p>&copy; {currentYear} Liora Coin Protocol. All rights reserved.</p>

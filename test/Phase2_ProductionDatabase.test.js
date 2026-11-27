@@ -85,51 +85,59 @@ describe("LIORA COIN — Phase 2: Production Database & Admin Security Verificat
 
     it("Should block development-only accounts from authenticating in production mode", async function () {
       const prevEnv = process.env.NODE_ENV;
+      const prevMode = process.env.OXENIQ_PERSISTENCE_MODE;
+      const suffix = crypto.randomUUID().slice(0, 8);
+      const devUsername = `dev_dan_${suffix}`;
       try {
         process.env.NODE_ENV = "production";
+        process.env.OXENIQ_PERSISTENCE_MODE = "postgres";
 
-        // Create a development-only admin
+        // Create a development-only admin in PostgreSQL
         await serverDb.createUser({
-          id: "usr_dev_dan",
-          username: "dev_dan",
-          email: "dan_dev@oxeniq.network",
+          username: devUsername,
+          email: `dan_dev_${suffix}@oxeniq.network`,
           passwordHash: hashPassword("L1ora$ecure_DevAdmin!"),
           role: "ADMIN",
           accountStatus: "ACTIVE",
           isDevelopmentOnly: true,
         });
 
-        const authResult = await verifyAdminCredentialsDetailed("dev_dan", "L1ora$ecure_DevAdmin!");
+        const authResult = await verifyAdminCredentialsDetailed(devUsername, "L1ora$ecure_DevAdmin!");
         expect(authResult.user).to.be.null;
         expect(authResult.error).to.equal("DEVELOPMENT_ACCOUNT_PROHIBITED");
       } finally {
         process.env.NODE_ENV = prevEnv;
+        process.env.OXENIQ_PERSISTENCE_MODE = prevMode;
       }
     });
 
     it("Should permit provisioned production accounts (isDevelopmentOnly: false) in production mode", async function () {
       const prevEnv = process.env.NODE_ENV;
+      const prevMode = process.env.OXENIQ_PERSISTENCE_MODE;
+      const suffix = crypto.randomUUID().slice(0, 8);
+      const prodUsername = `admin_prod_${suffix}`;
       try {
         process.env.NODE_ENV = "production";
+        process.env.OXENIQ_PERSISTENCE_MODE = "postgres";
 
-        // Create a provisioned production admin
+        // Create a provisioned production admin in PostgreSQL
         await serverDb.createUser({
-          id: "usr_prod_dan",
-          username: "admin_prod",
-          email: "admin_prod@oxeniq.network",
+          username: prodUsername,
+          email: `admin_prod_${suffix}@oxeniq.network`,
           passwordHash: hashPassword("L1ora$ecure_ProdAdmin2026!"),
           role: "ADMIN",
           accountStatus: "ACTIVE",
           isDevelopmentOnly: false,
         });
 
-        const authResult = await verifyAdminCredentialsDetailed("admin_prod", "L1ora$ecure_ProdAdmin2026!");
+        const authResult = await verifyAdminCredentialsDetailed(prodUsername, "L1ora$ecure_ProdAdmin2026!");
         expect(authResult.user).to.not.be.null;
-        expect(authResult.user.username).to.equal("admin_prod");
+        expect(authResult.user.username).to.equal(prodUsername);
         expect(authResult.user.role).to.equal("ADMIN");
         expect(authResult.user.isDevelopmentOnly).to.be.false;
       } finally {
         process.env.NODE_ENV = prevEnv;
+        process.env.OXENIQ_PERSISTENCE_MODE = prevMode;
       }
     });
 
@@ -298,13 +306,19 @@ describe("LIORA COIN — Phase 2: Production Database & Admin Security Verificat
       expect(duplicateError).to.be.true;
     });
 
-    it("Should strictly confirm BSC Mainnet (#56), Polygon, TRON, and Bitcoin remain disabled in registry", function () {
-      expect(BLOCKCHAIN_REGISTRY["bsc-mainnet"].enabled).to.be.false;
+    it("Should confirm BSC Mainnet (#56) is strictly read-only while Polygon, TRON, and Bitcoin remain disabled in registry", function () {
+      const bscMainnet = BLOCKCHAIN_REGISTRY["bsc-mainnet"];
+      expect(bscMainnet.enabled).to.be.true;
+      expect(bscMainnet.status).to.equal("READ_ONLY_MAINNET");
+      expect(bscMainnet.features.smartContracts).to.be.true;
+      expect(bscMainnet.features.tokenTransfers).to.be.false;
+      expect(bscMainnet.features.tradingBotPayments).to.be.false;
+      expect(bscMainnet.features.investorLocking).to.be.false;
+
       expect(BLOCKCHAIN_REGISTRY["polygon-mainnet"].enabled).to.be.false;
       expect(BLOCKCHAIN_REGISTRY["tron-mainnet"].enabled).to.be.false;
       expect(BLOCKCHAIN_REGISTRY["bitcoin-mainnet"].enabled).to.be.false;
 
-      expect(() => assertChainEnabled("bsc-mainnet")).to.throw(UnsupportedChainError);
       expect(() => assertChainEnabled("polygon-mainnet")).to.throw(UnsupportedChainError);
       expect(() => assertChainEnabled("tron-mainnet")).to.throw(UnsupportedChainError);
       expect(() => assertChainEnabled("bitcoin-mainnet")).to.throw(UnsupportedChainError);

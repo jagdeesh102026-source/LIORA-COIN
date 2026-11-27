@@ -363,8 +363,13 @@ describe("LIORA COIN — Gate C4A: Pre-Launch Persistence and Security Hardening
     });
 
     it("POST /api/prelaunch/quote & GET /api/prelaunch/quote should generate and fetch database quote", async function () {
+      const authHeaders = {
+        cookie: `${SESSION_COOKIE_NAME}=${regularSession.sessionIdentifier}`,
+        "x-requested-with": "XMLHttpRequest",
+      };
       const postReq = new NextRequest("http://localhost:3000/api/prelaunch/quote", {
         method: "POST",
+        headers: authHeaders,
         body: JSON.stringify({
           userId: regularUser.id,
           walletAddress: testSignerAddress,
@@ -381,7 +386,9 @@ describe("LIORA COIN — Gate C4A: Pre-Launch Persistence and Security Hardening
       const quoteId = postData.quote.quoteId;
 
       // GET quote by ID
-      const getReq = new NextRequest(`http://localhost:3000/api/prelaunch/quote?quoteId=${quoteId}`);
+      const getReq = new NextRequest(`http://localhost:3000/api/prelaunch/quote?quoteId=${quoteId}`, {
+        headers: { cookie: `${SESSION_COOKIE_NAME}=${regularSession.sessionIdentifier}` },
+      });
       const getRes = await getQuoteRoute(getReq);
       expect(getRes.status).to.equal(200);
       const getData = await getRes.json();
@@ -391,6 +398,10 @@ describe("LIORA COIN — Gate C4A: Pre-Launch Persistence and Security Hardening
     });
 
     it("POST /api/prelaunch/purchases & GET /api/prelaunch/purchases should execute and list purchases", async function () {
+      const authHeaders = {
+        cookie: `${SESSION_COOKIE_NAME}=${regularSession.sessionIdentifier}`,
+        "x-requested-with": "XMLHttpRequest",
+      };
       // 1. Create a fresh quote
       const quoteRes = await serverDb.createInvestorQuote({
         userId: regularUser.id,
@@ -403,6 +414,7 @@ describe("LIORA COIN — Gate C4A: Pre-Launch Persistence and Security Hardening
       // 2. Execute purchase via route
       const postReq = new NextRequest("http://localhost:3000/api/prelaunch/purchases", {
         method: "POST",
+        headers: authHeaders,
         body: JSON.stringify({
           quoteId,
           txHash: "0xroute_purchase_tx",
@@ -417,7 +429,9 @@ describe("LIORA COIN — Gate C4A: Pre-Launch Persistence and Security Hardening
       expect(postData.record.claimStatus).to.equal("LOCKED");
 
       // 3. GET purchases for user
-      const getReq = new NextRequest(`http://localhost:3000/api/prelaunch/purchases?userId=${regularUser.id}`);
+      const getReq = new NextRequest(`http://localhost:3000/api/prelaunch/purchases?userId=${regularUser.id}`, {
+        headers: { cookie: `${SESSION_COOKIE_NAME}=${regularSession.sessionIdentifier}` },
+      });
       const getRes = await getPurchasesRoute(getReq);
       expect(getRes.status).to.equal(200);
       const getData = await getRes.json();
@@ -614,6 +628,10 @@ describe("LIORA COIN — Gate C4A: Pre-Launch Persistence and Security Hardening
     it("Should reject negative investment amount with HTTP 400 validation error", async function () {
       const req = new NextRequest("http://localhost:3000/api/prelaunch/quote", {
         method: "POST",
+        headers: {
+          cookie: `${SESSION_COOKIE_NAME}=${regularSession.sessionIdentifier}`,
+          "x-requested-with": "XMLHttpRequest",
+        },
         body: JSON.stringify({
           userId: regularUser.id,
           walletAddress: testSignerAddress,
@@ -631,6 +649,10 @@ describe("LIORA COIN — Gate C4A: Pre-Launch Persistence and Security Hardening
     it("Should reject malformed non-hex wallet addresses with HTTP 400 validation error", async function () {
       const req = new NextRequest("http://localhost:3000/api/prelaunch/quote", {
         method: "POST",
+        headers: {
+          cookie: `${SESSION_COOKIE_NAME}=${regularSession.sessionIdentifier}`,
+          "x-requested-with": "XMLHttpRequest",
+        },
         body: JSON.stringify({
           userId: regularUser.id,
           walletAddress: "not_a_valid_evm_address",

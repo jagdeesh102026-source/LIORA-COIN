@@ -236,13 +236,13 @@ export const InvestorSettlementPortal: React.FC = () => {
                 )}
               </div>
               <div className="space-y-1 font-mono text-[11px]">
-                <div className="flex justify-between text-secondary">
+                <div className="flex justify-between text-secondary" suppressHydrationWarning>
                   <span>Investment:</span>
-                  <span className="text-white font-bold">₹{plan.principalINR.toLocaleString()}</span>
+                  <span className="text-white font-bold" suppressHydrationWarning>₹{plan.principalINR.toLocaleString('en-US')}</span>
                 </div>
-                <div className="flex justify-between text-secondary">
+                <div className="flex justify-between text-secondary" suppressHydrationWarning>
                   <span>Contractual Value:</span>
-                  <span className="text-emerald-400 font-bold">₹{plan.contractualAllocationINR.toLocaleString()} ({plan.multiplierFactor}×)</span>
+                  <span className="text-emerald-400 font-bold" suppressHydrationWarning>₹{plan.contractualAllocationINR.toLocaleString('en-US')} ({plan.multiplierFactor}×)</span>
                 </div>
                 <div className="flex justify-between text-secondary">
                   <span>Lock Duration:</span>
@@ -286,21 +286,21 @@ export const InvestorSettlementPortal: React.FC = () => {
 
               {/* Comprehensive Metrics Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div className="p-3 rounded-2xl bg-[var(--bg-primary)] border border-[var(--border-subtle)]">
+                <div className="p-3 rounded-2xl bg-[var(--bg-primary)] border border-[var(--border-subtle)]" suppressHydrationWarning>
                   <span className="text-secondary block">Principal Investment</span>
-                  <span className="font-bold text-white text-sm font-mono">₹{inv.principalINR.toLocaleString()}</span>
+                  <span className="font-bold text-white text-sm font-mono" suppressHydrationWarning>₹{inv.principalINR.toLocaleString('en-US')}</span>
                   <span className="text-[10px] text-secondary block font-mono">(${inv.principalUSD.toFixed(2)} USD)</span>
                 </div>
 
-                <div className="p-3 rounded-2xl bg-[var(--bg-primary)] border border-[var(--border-subtle)]">
+                <div className="p-3 rounded-2xl bg-[var(--bg-primary)] border border-[var(--border-subtle)]" suppressHydrationWarning>
                   <span className="text-secondary block">Contractual Cash Settlement</span>
-                  <span className="font-bold text-emerald-300 text-sm font-mono">₹{inv.contractualSettlementINR.toLocaleString()}</span>
+                  <span className="font-bold text-emerald-300 text-sm font-mono" suppressHydrationWarning>₹{inv.contractualSettlementINR.toLocaleString('en-US')}</span>
                   <span className="text-[10px] text-emerald-400 block font-mono">{inv.multiplierFactor}× factor (Fixed)</span>
                 </div>
 
-                <div className="p-3 rounded-2xl bg-[var(--bg-primary)] border border-amber-500/30">
+                <div className="p-3 rounded-2xl bg-[var(--bg-primary)] border border-amber-500/30" suppressHydrationWarning>
                   <span className="text-amber-300 font-bold block text-[10px] uppercase tracking-wide">Custodial LIORA Allocation</span>
-                  <span className="font-bold text-amber-300 text-sm font-mono">{Number(inv.originalCollateralTokensFormatted).toLocaleString()} LIORA</span>
+                  <span className="font-bold text-amber-300 text-sm font-mono" suppressHydrationWarning>{Number(inv.originalCollateralTokensFormatted).toLocaleString('en-US')} LIORA</span>
                   <span className="text-[10px] text-secondary block font-mono">Company Custody • Read-Only Record</span>
                 </div>
 
@@ -325,7 +325,7 @@ export const InvestorSettlementPortal: React.FC = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 font-mono text-[11px] pt-1 text-slate-300">
                     <div>Rail: <strong className="text-white">{inv.payoutDispatched.paymentRail}</strong></div>
                     <div>Ref / UTR: <strong className="text-purple-300">{inv.payoutDispatched.referenceNumber}</strong></div>
-                    <div>Amount: <strong className="text-emerald-400">₹{inv.payoutDispatched.amountPaidINR.toLocaleString()}</strong></div>
+                    <div suppressHydrationWarning>Amount: <strong className="text-emerald-400" suppressHydrationWarning>₹{inv.payoutDispatched.amountPaidINR.toLocaleString('en-US')}</strong></div>
                   </div>
                   {inv.payoutDispatched.adminNotes && (
                     <p className="text-[10px] text-secondary italic">"{inv.payoutDispatched.adminNotes}"</p>
@@ -361,8 +361,8 @@ export const InvestorSettlementPortal: React.FC = () => {
                       {new Date(inv.collateralReturned.returnedAt).toLocaleDateString()}
                     </span>
                   </div>
-                  <div className="text-[11px] font-mono text-slate-300">
-                    Returned: <strong className="text-amber-300">{Number(inv.collateralReturned.returnedTokensFormatted).toLocaleString()} LIORA</strong> (Exact match: {inv.collateralReturned.isExactQuantityMatch ? 'YES' : 'NO'})
+                  <div className="text-[11px] font-mono text-slate-300" suppressHydrationWarning>
+                    Returned: <strong className="text-amber-300" suppressHydrationWarning>{Number(inv.collateralReturned.returnedTokensFormatted).toLocaleString('en-US')} LIORA</strong> (Exact match: {inv.collateralReturned.isExactQuantityMatch ? 'YES' : 'NO'})
                   </div>
                   <div className="text-[10px] font-mono text-secondary truncate">
                     Tx Hash: <span className="text-blue-300">{inv.collateralReturned.txHash}</span>
@@ -420,7 +420,7 @@ export const InvestorSettlementPortal: React.FC = () => {
                       className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5"
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
-                      <span>Return Exact {Number(inv.originalCollateralTokensFormatted).toLocaleString()} Collateral LIORA</span>
+                      <span suppressHydrationWarning>Return Exact {Number(inv.originalCollateralTokensFormatted).toLocaleString('en-US')} Collateral LIORA</span>
                     </button>
                   )}
 
@@ -485,7 +485,7 @@ export const InvestorSettlementPortal: React.FC = () => {
                   .map((log) => (
                     <div key={log.id} className="p-3 rounded-2xl bg-[var(--bg-primary)] border border-[var(--border-subtle)] text-xs space-y-1">
                       <div className="flex items-center justify-between font-mono text-[10px] text-secondary">
-                        <span>{new Date(log.timestamp).toLocaleString()}</span>
+                        <span suppressHydrationWarning>{new Date(log.timestamp).toISOString()}</span>
                         <span className="text-emerald-400 font-bold">{log.action}</span>
                       </div>
                       <p className="text-slate-300 text-[11px]">{log.details}</p>

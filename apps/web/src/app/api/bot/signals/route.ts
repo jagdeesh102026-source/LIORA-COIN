@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTradingBotAccess } from '@/lib/server/entitlementService';
-import { serverDb } from '@/lib/server/db';
+import { getAuthenticatedUser } from '@/lib/server/adminAuth';
 import { PREVIEW_CONFIG } from '@/config/previewConfig';
 
 // Confirmed Strategy Metadata & Simulated Telemetry
@@ -92,17 +92,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const { searchParams } = new URL(req.url);
-    const sessionCookie = req.cookies.get('liora_bot_session')?.value;
-    let userId = searchParams.get('userId');
-    const walletAddress = searchParams.get('walletAddress');
-
-    if (sessionCookie) {
-      const session = await serverDb.getSession(sessionCookie);
-      if (session) userId = session.userId;
-    }
-
-    if (!userId) {
+    const auth = await getAuthenticatedUser(req);
+    if (!auth) {
       return NextResponse.json(
         {
           error: 'UNAUTHORIZED',
@@ -111,6 +102,19 @@ export async function GET(req: NextRequest) {
         { status: 401 }
       );
     }
+
+    const { searchParams } = new URL(req.url);
+    const requestedUserId = searchParams.get('userId');
+    const walletAddress = searchParams.get('walletAddress');
+
+    if (requestedUserId && requestedUserId !== auth.user.id && auth.user.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'FORBIDDEN_IDENTITY_SPOOFING', message: 'Cannot query bot signals using another user ID.' },
+        { status: 403 }
+      );
+    }
+
+    const userId = auth.user.id;
 
     // Server-Side Entitlement Check Gateway
     const access = await getTradingBotAccess(userId, walletAddress);

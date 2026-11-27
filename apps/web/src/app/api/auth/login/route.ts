@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { serverDb } from '@/lib/server/db';
 import {
   verifyPassword,
+  validateCsrfProtection,
+  getSessionCookieOptions,
   checkLoginRateLimit,
   recordFailedLoginAttempt,
   resetLoginRateLimit,
@@ -19,6 +21,14 @@ const loginSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    const csrfCheck = validateCsrfProtection(req);
+    if (!csrfCheck.valid) {
+      return NextResponse.json(
+        { success: false, error: 'CSRF_REJECTED', message: csrfCheck.reason },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const parsed = loginSchema.safeParse(body);
 
@@ -60,6 +70,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (user.lockedUntil && new Date(user.lockedUntil).getTime() > Date.now()) {
+      const retryAfterSeconds = Math.max(
+        1,
+        Math.ceil((new Date(user.lockedUntil).getTime() - Date.now()) / 1000)
+      );
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'RATE_LIMIT_EXCEEDED',
+          message: `Account temporarily locked. Please retry in ${retryAfterSeconds} seconds.`,
+        },
+        { status: 429 }
+      );
+    }
+
     // Verify password against stored scrypt hash
     const isValid = verifyPassword(password, user.passwordHash);
     if (!isValid) {
@@ -75,6 +100,52 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Reject inactive, suspended, or banned accounts
+    if (user.accountStatus !== 'ACTIVE') {
+      await serverDb.createAuditLog({
+        actorId: user.id,
+        action: 'LOGIN_FAILED_ACCOUNT_INACTIVE',
+        entity: 'User',
+        entityId: user.id,
+        severity: 'WARNING',
+        metadata: { username: user.username, accountStatus: user.accountStatus, ip: clientIp },
+      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'ACCOUNT_INACTIVE',
+          message: `Account is ${user.accountStatus.toLowerCase()} and cannot sign in.`,
+        },
+        { status: 403 }
+      );
+    }
+
+    // Reject development-only accounts in production or staging
+    const isProdOrStaging =
+      process.env.NODE_ENV === 'production' ||
+      process.env.STAGING === 'true' ||
+      process.env.OXENIQ_ENV === 'production' ||
+      process.env.OXENIQ_ENV === 'staging';
+
+    if (user.isDevelopmentOnly && isProdOrStaging) {
+      await serverDb.createAuditLog({
+        actorId: user.id,
+        action: 'SECURITY_ALERT_DEVELOPMENT_ACCOUNT_BLOCKED_IN_PRODUCTION',
+        entity: 'User',
+        entityId: user.id,
+        severity: 'CRITICAL',
+        metadata: { username: user.username, ip: clientIp },
+      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'DEVELOPMENT_ACCOUNT_PROHIBITED',
+          message: 'Development-only accounts are disabled in production.',
+        },
+        { status: 403 }
+      );
+    }
+
     resetLoginRateLimit(rateLimitKey);
 
     // Retrieve linked wallets for user
@@ -82,14 +153,15 @@ export async function POST(req: NextRequest) {
     let primaryWallet = wallets[0]?.walletAddress || null;
 
     if (!primaryWallet) {
-      // Auto-provision deterministic investor wallet if none linked
+      // Auto-provision deterministic investor wallet if none linked (default to BSC Mainnet 56 in production, 97 in dev)
+      const defaultChainId = process.env.NODE_ENV === 'production' ? 56 : 97;
       const crypto = require('crypto');
       const hash = crypto.createHash('sha256').update(`liora:investor:${user.id}`).digest('hex');
       primaryWallet = '0x' + hash.slice(0, 40);
       await serverDb.linkVerifiedWallet({
         walletAddress: primaryWallet,
         userId: user.id,
-        chainId: 97,
+        chainId: defaultChainId,
         signatureProof: `login_derived_${user.id}`,
         nonceChallenge: `login_${Date.now()}`,
       });
@@ -122,13 +194,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax' as const,
-      path: '/',
-      maxAge: 24 * 3600,
-    };
+    const cookieOptions = getSessionCookieOptions(24 * 3600);
 
     response.cookies.set(SESSION_COOKIE_NAME, session.sessionIdentifier, cookieOptions);
     response.cookies.set(LEGACY_SESSION_COOKIE_NAME, session.sessionIdentifier, cookieOptions);

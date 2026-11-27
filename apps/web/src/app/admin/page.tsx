@@ -32,7 +32,7 @@ export default function AdminPage() {
 
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [adminUser, setAdminUser] = useState<{ id: string; username: string; role: string } | null>(null);
-  const [username, setUsername] = useState('admin_dan');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -186,7 +186,7 @@ export default function AdminPage() {
               </label>
               <input
                 type="text"
-                placeholder="e.g. admin_dan"
+                placeholder="Enter administrator username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-subtle)] text-sm text-white placeholder-secondary focus:outline-none focus:border-[var(--brand-accent)]"

@@ -175,18 +175,18 @@ export const BotSignalHistoryPanel: React.FC<BotSignalHistoryPanelProps> = ({ on
 
                     {/* Entry Price */}
                     <td className="py-3.5 px-4 font-bold text-white">
-                      ${sig.entryPrice < 1 ? sig.entryPrice.toFixed(4) : sig.entryPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      ${sig.entryPrice < 1 ? sig.entryPrice.toFixed(4) : sig.entryPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </td>
 
                     {/* TP1 & TP2 */}
                     <td className="py-3.5 px-4 text-emerald-400">
-                      <div>TP1: ${sig.tp1 < 1 ? sig.tp1.toFixed(4) : sig.tp1.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
-                      <div className="text-[11px] text-emerald-300/80">TP2: ${sig.tp2 < 1 ? sig.tp2.toFixed(4) : sig.tp2.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                      <div>TP1: ${sig.tp1 < 1 ? sig.tp1.toFixed(4) : sig.tp1.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                      <div className="text-[11px] text-emerald-300/80">TP2: ${sig.tp2 < 1 ? sig.tp2.toFixed(4) : sig.tp2.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
                     </td>
 
                     {/* Stop Loss */}
                     <td className="py-3.5 px-4 text-rose-400">
-                      ${sig.stopLoss < 1 ? sig.stopLoss.toFixed(4) : sig.stopLoss.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      ${sig.stopLoss < 1 ? sig.stopLoss.toFixed(4) : sig.stopLoss.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </td>
 
                     {/* Risk/Reward */}
@@ -202,10 +202,10 @@ export const BotSignalHistoryPanel: React.FC<BotSignalHistoryPanelProps> = ({ on
                       </div>
                     </td>
 
-                    {/* Timeframe & Timestamp */}
+                    {/* Timeframe & Timestamp (UTC deterministic for SSR parity) */}
                     <td className="py-3.5 px-4 text-right font-sans text-secondary text-[11px]">
-                      <div>{new Date(sig.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                      <div className="text-muted text-[10px]">{new Date(sig.timestamp).toLocaleDateString()}</div>
+                      <div suppressHydrationWarning>{new Date(sig.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'UTC' })} UTC</div>
+                      <div className="text-muted text-[10px]" suppressHydrationWarning>{new Date(sig.timestamp).toLocaleDateString('en-US', { timeZone: 'UTC' })}</div>
                     </td>
                   </tr>
                 );

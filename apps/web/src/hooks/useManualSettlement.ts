@@ -30,6 +30,14 @@ export function useManualSettlement() {
 
   // Authoritative Backend Data Fetching (Task 1 / SEC-01)
   const refreshSettlements = useCallback(async () => {
+    // If no wallet address is connected, there is no investor account to load
+    if (!address) {
+      setInvestments([]);
+      setReconciliation(null);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setFetchError(null);
     setIsSessionExpired(false);

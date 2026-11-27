@@ -1763,13 +1763,57 @@ export class ServerDatabase {
 }
 
 // =========================================================================
-// CONTROLLED PERSISTENCE ADAPTER SELECTION (Gate C2B-4)
+// CONTROLLED PERSISTENCE ADAPTER SELECTION (Gate C2B-4 / Phase 2 Hardened)
 // =========================================================================
 
 export type PersistenceMode = 'postgres' | 'memory';
 
+export function isProductionPersistenceContext(): boolean {
+  return (
+    process.env.NODE_ENV === 'production' ||
+    process.env.OXENIQ_ENV === 'production'
+  );
+}
+
+export function validateDatabaseUrl(url: string | undefined): string {
+  if (!url || typeof url !== 'string' || !url.trim()) {
+    throw new Error(
+      'DATABASE_CONFIGURATION_ERROR: DATABASE_URL is missing. A valid PostgreSQL connection string is required.'
+    );
+  }
+  const clean = url.trim();
+  if (!/^postgres(ql)?:\/\/.+/i.test(clean)) {
+    throw new Error(
+      'DATABASE_CONFIGURATION_ERROR: DATABASE_URL is invalid. Expected a postgresql:// or postgres:// URI.'
+    );
+  }
+  return clean;
+}
+
 export function getPersistenceMode(): PersistenceMode {
-  const mode = process.env.OXENIQ_PERSISTENCE_MODE || 'memory';
+  const rawMode = process.env.OXENIQ_PERSISTENCE_MODE;
+
+  if (isProductionPersistenceContext()) {
+    if (rawMode === 'memory') {
+      throw new Error(
+        'PRODUCTION_PERSISTENCE_ERROR: In-memory persistence ("memory") is strictly prohibited in production.'
+      );
+    }
+    if (rawMode && rawMode !== 'postgres') {
+      throw new Error(
+        `INVALID_PERSISTENCE_MODE: Unrecognized OXENIQ_PERSISTENCE_MODE="${rawMode}". Allowed value in production: "postgres".`
+      );
+    }
+    validateDatabaseUrl(process.env.DATABASE_URL);
+    if (rawMode !== 'postgres') {
+      throw new Error(
+        'PRODUCTION_PERSISTENCE_ERROR: OXENIQ_PERSISTENCE_MODE must be explicitly set to "postgres" in production. Silent fallback to in-memory storage is prohibited.'
+      );
+    }
+    return 'postgres';
+  }
+
+  const mode = rawMode || 'memory';
   if (mode !== 'postgres' && mode !== 'memory') {
     throw new Error(
       `INVALID_PERSISTENCE_MODE: Unrecognized OXENIQ_PERSISTENCE_MODE="${mode}". Allowed values: "postgres" | "memory".`
@@ -1792,12 +1836,13 @@ if (!globalForDb.inMemoryDb) {
 export function getActiveDatabaseAdapter(): AnyDatabaseAdapter {
   const mode = getPersistenceMode();
   if (mode === 'postgres') {
-    if (!process.env.DATABASE_URL) {
-      throw new Error(
-        'DATABASE_CONFIGURATION_ERROR: OXENIQ_PERSISTENCE_MODE="postgres" is set, but DATABASE_URL is missing.'
-      );
-    }
+    validateDatabaseUrl(process.env.DATABASE_URL);
     return prismaDb;
+  }
+  if (isProductionPersistenceContext()) {
+    throw new Error(
+      'PRODUCTION_PERSISTENCE_ERROR: Refusing to return in-memory persistence adapter in production.'
+    );
   }
   return globalForDb.inMemoryDb;
 }

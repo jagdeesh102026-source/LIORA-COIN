@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDemoStore } from '../../lib/demo/useDemoStore';
 import { demoStore } from '../../lib/demo/demoStore';
+import { isTestnetSandboxEnabled } from '../../config/tokenConfig';
 import { useWeb3Wallet } from '../../hooks/useWeb3Wallet';
 import {
   ShieldCheck,
@@ -15,8 +16,7 @@ import {
   ArrowRight,
   AlertCircle,
   Eye,
-  EyeOff,
-  KeyRound
+  EyeOff
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -36,7 +36,7 @@ export default function AuthPage() {
   const [regUsername, setRegUsername] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
-  const [regSponsor, setRegSponsor] = useState('OX-MASTER7');
+  const [regSponsor, setRegSponsor] = useState('');
 
   // UI state
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -85,18 +85,32 @@ export default function AuthPage() {
         return;
       }
 
-      // Sync client demoStore user state
+      // Sync sanitized non-credential UI user state from authoritative server session response
       if (data.user) {
-        login(loginUsername.trim(), loginPassword.trim());
-        if (data.walletAddress) {
-          linkWallet(data.walletAddress);
-        }
+        demoStore.setActiveUser({
+          id: data.user.id,
+          username: data.user.username,
+          displayName: data.user.username,
+          email: data.user.email || '',
+          referralCode: `LIORA-${String(data.user.id).slice(0, 6).toUpperCase()}`,
+          sponsorCode: null,
+          walletAddress: data.walletAddress || null,
+          isWalletVerified: Boolean(data.walletAddress),
+          registeredAt: new Date().toISOString(),
+          kycTier: 'TIER_1_DEMO',
+          role: data.user.role === 'ADMIN' ? 'ADMIN' : 'USER',
+        });
       }
 
       setIsSubmitting(false);
       router.push('/dashboard');
     } catch {
-      // Fallback to client demo store
+      if (!isTestnetSandboxEnabled()) {
+        setIsSubmitting(false);
+        setErrorMessage('Authentication service unavailable. Please try again later.');
+        return;
+      }
+      // Fallback strictly limited to isolated non-production local sandbox
       const res = login(loginUsername.trim(), loginPassword.trim());
       setIsSubmitting(false);
       if (!res.success) {
@@ -145,23 +159,31 @@ export default function AuthPage() {
         return;
       }
 
-      // Sync client demoStore user state
+      // Sync sanitized non-credential UI user state from authoritative server registration response
       if (data.user) {
-        register(
-          regUsername.trim(),
-          regEmail.trim(),
-          regPassword.trim(),
-          undefined,
-          regSponsor.trim()
-        );
-        if (data.walletAddress) {
-          linkWallet(data.walletAddress);
-        }
+        demoStore.setActiveUser({
+          id: data.user.id,
+          username: data.user.username,
+          displayName: data.user.username,
+          email: data.user.email || '',
+          referralCode: `LIORA-${String(data.user.id).slice(0, 6).toUpperCase()}`,
+          sponsorCode: regSponsor.trim() || null,
+          walletAddress: data.walletAddress || null,
+          isWalletVerified: Boolean(data.walletAddress),
+          registeredAt: new Date().toISOString(),
+          kycTier: 'TIER_1_DEMO',
+          role: data.user.role === 'ADMIN' ? 'ADMIN' : 'USER',
+        });
       }
 
       setIsSubmitting(false);
       router.push('/dashboard');
     } catch {
+      if (!isTestnetSandboxEnabled()) {
+        setIsSubmitting(false);
+        setErrorMessage('Registration service unavailable. Please try again later.');
+        return;
+      }
       const res = register(
         regUsername.trim(),
         regEmail.trim(),
@@ -178,12 +200,6 @@ export default function AuthPage() {
     }
   };
 
-  const handlePreFillAccount = (username: string, pass: string) => {
-    setLoginUsername(username);
-    setLoginPassword(pass);
-    setErrorMessage(null);
-  };
-
   return (
     <div className="max-w-md mx-auto py-8 sm:py-12 space-y-6">
       {/* Header */}
@@ -193,12 +209,12 @@ export default function AuthPage() {
           <span>NON-CUSTODIAL PLATFORM ACCESS</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-          {mode === 'LOGIN' ? 'Sign In to Liora Coin' : 'Create Demo Account'}
+          {mode === 'LOGIN' ? 'Sign In to Liora Coin' : 'Create Investor Account'}
         </h1>
         <p className="text-xs sm:text-sm text-secondary">
           {mode === 'LOGIN'
-            ? 'Access your portfolio, referral dashboard, and claimable commission rewards.'
-            : 'Register a unique username and unlock 3-tier referral commission tracking.'}
+            ? 'Access your portfolio, allocation schedule, and custodial dashboard.'
+            : 'Register your account to manage LIORA token allocations.'}
         </p>
       </div>
 
@@ -253,7 +269,7 @@ export default function AuthPage() {
                 <User className="w-4 h-4 text-secondary absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="e.g. trader_alex or trader@oxeniq.com"
+                  placeholder="Enter your username or email"
                   value={loginUsername}
                   onChange={(e) => setLoginUsername(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-subtle)] text-sm text-white placeholder-secondary focus:outline-none focus:border-[var(--brand-accent)]"
@@ -263,9 +279,8 @@ export default function AuthPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-secondary mb-1.5 flex items-center justify-between">
-                <span>Password</span>
-                <span className="text-[11px] text-muted">Demo Credentials Below</span>
+              <label className="block text-xs font-medium text-secondary mb-1.5">
+                Password
               </label>
               <div className="relative">
                 <Lock className="w-4 h-4 text-secondary absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -315,7 +330,7 @@ export default function AuthPage() {
                 <User className="w-4 h-4 text-secondary absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="e.g. trader_sophia"
+                  placeholder="Enter desired username"
                   value={regUsername}
                   onChange={(e) => setRegUsername(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-subtle)] text-sm text-white placeholder-secondary focus:outline-none focus:border-[var(--brand-accent)]"
@@ -330,7 +345,7 @@ export default function AuthPage() {
               </label>
               <input
                 type="email"
-                placeholder="e.g. sophia@example.com"
+                placeholder="name@example.com"
                 value={regEmail}
                 onChange={(e) => setRegEmail(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-subtle)] text-sm text-white placeholder-secondary focus:outline-none focus:border-[var(--brand-accent)]"
@@ -367,7 +382,7 @@ export default function AuthPage() {
               </label>
               <input
                 type="text"
-                placeholder="e.g. OX-MASTER7"
+                placeholder="Optional sponsor code"
                 value={regSponsor}
                 onChange={(e) => setRegSponsor(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-subtle)] text-sm text-white uppercase font-mono placeholder-secondary focus:outline-none focus:border-[var(--brand-accent)]"
@@ -393,40 +408,6 @@ export default function AuthPage() {
             </button>
           </form>
         )}
-
-        {/* Quick Demo Credentials Assistant */}
-        <div className="p-4 rounded-2xl bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-2.5 text-xs">
-          <div className="flex items-center gap-1.5 font-bold text-white">
-            <KeyRound className="w-3.5 h-3.5 text-amber-400" />
-            <span>Demo Test Credentials (Click to pre-fill)</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-            <button
-              type="button"
-              onClick={() => handlePreFillAccount('trader_alex', 'OxeniqDemo2026!')}
-              className="p-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--brand-accent)] text-left transition-colors"
-            >
-              <div className="font-bold text-white text-xs">@trader_alex</div>
-              <div className="text-[10px] text-secondary">Password: OxeniqDemo2026!</div>
-              <div className="text-[10px] text-[var(--brand-accent)] font-medium">Primary Trader (12.5k OX)</div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handlePreFillAccount('emily_mentor', 'OxeniqDemo2026!')}
-              className="p-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--brand-accent)] text-left transition-colors"
-            >
-              <div className="font-bold text-white text-xs">@emily_mentor</div>
-              <div className="text-[10px] text-secondary">Password: OxeniqDemo2026!</div>
-              <div className="text-[10px] text-purple-300 font-medium">Level 1 Upline Sponsor</div>
-            </button>
-          </div>
-
-          <p className="text-[11px] text-secondary">
-            <strong>Demonstration Notice:</strong> This is a localhost demonstration utilizing local browser state. Real cryptographic signing and non-custodial external wallets are supported without storing passwords in production plain text.
-          </p>
-        </div>
       </div>
     </div>
   );

@@ -83,7 +83,7 @@ async function main() {
         ]);
         break;
       }
-    } catch (_) {}
+    } catch (_) { }
   }
 
   if (!provider) {

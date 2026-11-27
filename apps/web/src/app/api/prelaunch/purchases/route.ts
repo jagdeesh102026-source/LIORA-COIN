@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverDb } from '@/lib/server/db';
+import { getAuthenticatedUser, validateCsrfProtection } from '@/lib/server/adminAuth';
 
 const executePurchaseSchema = z.object({
   quoteId: z.string().min(1, 'Quote ID is required').max(100),
@@ -10,17 +11,26 @@ const executePurchaseSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const searchParams = req.nextUrl.searchParams;
-    const userId = searchParams.get('userId');
-
-    if (!userId) {
+    const auth = await getAuthenticatedUser(req);
+    if (!auth) {
       return NextResponse.json(
-        { success: false, error: 'User ID is required' },
-        { status: 400 }
+        { success: false, error: 'UNAUTHORIZED', message: 'Authentication required to view allocation purchases.' },
+        { status: 401 }
       );
     }
 
-    const purchases = await serverDb.getUserInvestorPurchases(userId);
+    const searchParams = req.nextUrl.searchParams;
+    const requestedUserId = searchParams.get('userId');
+
+    if (requestedUserId && requestedUserId !== auth.user.id && auth.user.role !== 'ADMIN') {
+      return NextResponse.json(
+        { success: false, error: 'FORBIDDEN_IDENTITY_SPOOFING', message: 'Cannot query purchase records belonging to another user.' },
+        { status: 403 }
+      );
+    }
+
+    const targetUserId = auth.user.role === 'ADMIN' && requestedUserId ? requestedUserId : auth.user.id;
+    const purchases = await serverDb.getUserInvestorPurchases(targetUserId);
     return NextResponse.json({
       success: true,
       purchases
@@ -35,6 +45,33 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const csrfCheck = validateCsrfProtection(req);
+    if (!csrfCheck.valid) {
+      return NextResponse.json(
+        { success: false, error: 'CSRF_REJECTED', message: csrfCheck.reason },
+        { status: 403 }
+      );
+    }
+
+    const auth = await getAuthenticatedUser(req);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'UNAUTHORIZED', message: 'Authentication required to execute an allocation purchase.' },
+        { status: 401 }
+      );
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'PRELAUNCH_EXECUTION_DISABLED',
+          message: 'Pre-launch token purchases and investment locking are disabled in production until authorized.'
+        },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const parsed = executePurchaseSchema.safeParse(body);
 
@@ -53,6 +90,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'QUOTE_NOT_FOUND_OR_ALREADY_USED', message: 'Quote does not exist or has already been consumed (replay defense).' },
         { status: 400 }
+      );
+    }
+
+    // Ownership enforcement: prevent consuming another user's quote
+    if (quote.userId !== auth.user.id && auth.user.role !== 'ADMIN') {
+      return NextResponse.json(
+        { success: false, error: 'FORBIDDEN_IDENTITY_SPOOFING', message: 'Cannot execute a purchase using another user quote.' },
+        { status: 403 }
       );
     }
 

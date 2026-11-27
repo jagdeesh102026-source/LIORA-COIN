@@ -119,7 +119,7 @@ export const TreasuryOverviewDashboard: React.FC = () => {
           <div className="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
             <div className="flex items-center gap-2">
               <Coins className="w-4 h-4 text-[var(--brand-accent)]" />
-              <h2 className="text-sm font-extrabold text-white">LIORA Supply Allocation (1 Billion Fixed)</h2>
+              <h2 className="text-sm font-extrabold text-white">LIORA Operating Treasury Allocation (1 Billion Active Pool)</h2>
             </div>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 font-bold border border-emerald-500/30">
               Double-Entry Conserved

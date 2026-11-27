@@ -53,7 +53,7 @@ export interface TreasuryStateSnapshot {
   // Global supply
   totalSupplyRaw: bigint;
   totalSupplyFormatted: string;
-  
+
   // 70% Client Allocation Sub-Ledger
   clientAllocationTotalRaw: bigint;
   clientAllocationTotalFormatted: string;
@@ -210,7 +210,7 @@ class TreasuryAccountingEngine {
     // 700M - (Delivered + Paired + Committed)
     const totalDeductedFromClient =
       tokensDeliveredToBuyersRaw + tokensPairedIntoLiquidityRaw + committedLioraRaw;
-    
+
     let availableClientAllocationRaw = 0n;
     if (CLIENT_ALLOCATION_TOTAL_LIORA >= totalDeductedFromClient) {
       availableClientAllocationRaw = CLIENT_ALLOCATION_TOTAL_LIORA - totalDeductedFromClient;

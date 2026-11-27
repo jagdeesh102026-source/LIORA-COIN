@@ -269,6 +269,7 @@ describe("LIORA COIN — Phase 2B Gate C2B-4: Controlled PostgreSQL Cutover & En
   // =========================================================================
   describe("2. Investor & Subscription Integration", function () {
     let testUserId;
+    let testUserSession;
     const testWallet = "0x" + crypto.randomBytes(20).toString("hex").toLowerCase();
 
     before(async function () {
@@ -277,6 +278,7 @@ describe("LIORA COIN — Phase 2B Gate C2B-4: Controlled PostgreSQL Cutover & En
         role: "USER",
       });
       testUserId = u.id;
+      testUserSession = await serverDb.createSession(testUserId, 12, "127.0.0.1");
     });
 
     it("2.1 GET /api/bot/subscription/plans: Retrieves active subscription plans from PostgreSQL", async function () {
@@ -295,7 +297,11 @@ describe("LIORA COIN — Phase 2B Gate C2B-4: Controlled PostgreSQL Cutover & En
     it("2.2 POST /api/bot/trial/start: Activates 48-hour free trial and prevents duplicate activation", async function () {
       const trialReq = new NextRequest("http://localhost:3000/api/bot/trial/start", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          cookie: `liora_session=${testUserSession.sessionIdentifier}`,
+          "x-requested-with": "XMLHttpRequest",
+        },
         body: JSON.stringify({
           userId: testUserId,
           walletAddress: testWallet,
@@ -319,7 +325,11 @@ describe("LIORA COIN — Phase 2B Gate C2B-4: Controlled PostgreSQL Cutover & En
       // Anti-abuse: Repeated activation attempt by same user is rejected
       const retryReq = new NextRequest("http://localhost:3000/api/bot/trial/start", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          cookie: `liora_session=${testUserSession.sessionIdentifier}`,
+          "x-requested-with": "XMLHttpRequest",
+        },
         body: JSON.stringify({
           userId: testUserId,
           walletAddress: testWallet,

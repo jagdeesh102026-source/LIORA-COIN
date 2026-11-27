@@ -36,6 +36,7 @@ export function useDemoStore() {
   const isInitialized = demoStore.getInitialized() && isClientReady;
 
   return {
+    isClientReady,
     isInitialized,
     activeUser,
     tokens,

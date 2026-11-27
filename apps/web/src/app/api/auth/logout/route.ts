@@ -1,13 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { serverDb } from '@/lib/server/db';
 import {
+  validateCsrfProtection,
   getSessionTokenFromRequest,
+  getSessionCookieOptions,
   SESSION_COOKIE_NAME,
   LEGACY_SESSION_COOKIE_NAME
 } from '@/lib/server/adminAuth';
 
 export async function POST(req: NextRequest) {
   try {
+    const csrfCheck = validateCsrfProtection(req);
+    if (!csrfCheck.valid) {
+      return NextResponse.json(
+        { success: false, error: 'CSRF_REJECTED', message: csrfCheck.reason },
+        { status: 403 }
+      );
+    }
+
     const sessionToken = getSessionTokenFromRequest(req);
 
     if (sessionToken) {
@@ -20,8 +30,7 @@ export async function POST(req: NextRequest) {
     });
 
     const expireOptions = {
-      path: '/',
-      maxAge: 0,
+      ...getSessionCookieOptions(0),
       expires: new Date(0)
     };
 

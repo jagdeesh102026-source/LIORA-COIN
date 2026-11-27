@@ -12,30 +12,22 @@
 
 /**
  * Helper to determine if running locally for developer / tester interactive Testnet trading.
- * On localhost/127.0.0.1, interactive BSC Testnet trading and MetaMask signing are enabled.
- * On remote/public review deployments, read-only preview restrictions are strictly preserved.
+ * Uses environment variable or runtime checks that evaluate identically on server and client.
  */
-function isLocalhost(): boolean {
-  if (typeof window !== 'undefined') {
-    const h = window.location.hostname;
-    return h === 'localhost' || h === '127.0.0.1' || h.endsWith('.local');
+function isLocalEnvironment(): boolean {
+  if (process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_ALLOW_LOCAL_TRADING === 'true') {
+    return true;
   }
-  return process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_ALLOW_LOCAL_TRADING === 'true';
+  return false;
 }
 
 export const PREVIEW_CONFIG = {
-  // Master toggle: Enabled for temporary remote review, disabled on localhost for interactive testing
-  get isPreviewMode() {
-    return !isLocalhost();
-  },
+  // Master toggle: Always true in Phase 1 to inform users that contracts are verified on Mainnet in read-only mode
+  isPreviewMode: true,
 
   // Security & Confidentiality Policies
-  get disableLiveTrading() {
-    return !isLocalhost();
-  },
-  get disableOnChainPurchases() {
-    return !isLocalEnvironment();
-  },
+  disableLiveTrading: true,
+  disableOnChainPurchases: true,
   hideTradingBot: false,
   hideTradingBotSignals: true,
   lockAdminConsole: false,
@@ -46,9 +38,5 @@ export const PREVIEW_CONFIG = {
   tradingBotRestrictedNotice: 'Proprietary Trading Strategy (ALGOX V6_1_24) is confidential and protected under NDA. Strategy parameters, webhook receivers, and signal feeds are disabled during external remote preview.',
   adminRestrictedNotice: 'Administrative governance and parameter modifications are locked in Remote Review Mode.',
 };
-
-function isLocalEnvironment(): boolean {
-  return isLocalhost();
-}
 
 export default PREVIEW_CONFIG;

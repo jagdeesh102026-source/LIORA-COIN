@@ -6,7 +6,15 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const address = searchParams.get('address');
     const chainIdParam = searchParams.get('chainId');
-    const chainId = chainIdParam ? parseInt(chainIdParam, 10) : 97;
+    const isProd = process.env.NODE_ENV === 'production' || process.env.OXENIQ_ENV === 'production';
+    const chainId = chainIdParam ? parseInt(chainIdParam, 10) : (isProd ? 56 : 97);
+
+    if (isProd && chainId !== 56) {
+      return NextResponse.json(
+        { success: false, error: 'UNSUPPORTED_CHAIN_ID', message: 'Production authentication supports BSC Mainnet (Chain ID 56) only.' },
+        { status: 400 }
+      );
+    }
 
     if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
       return NextResponse.json(
@@ -20,9 +28,9 @@ export async function GET(req: NextRequest) {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 5 * 60 * 1000);
 
-    const domain = req.headers.get('host') || 'oxeniq.network';
+    const domain = req.headers.get('host') || 'lioracoin.com';
     const uri = req.nextUrl.origin || `https://${domain}`;
-    const statement = 'Sign in with Ethereum to Liora Coin (OXENIQ) non-custodial exchange and trading terminal.';
+    const statement = 'Sign in with Ethereum to Liora Coin (LIORA) non-custodial platform.';
 
     // Canonical EIP-4361 SIWE formatted challenge string
     const siweMessage = [

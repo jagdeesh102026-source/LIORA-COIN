@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { SettlementPersistentStore } from '@/lib/server/settlement/settlementPersistentStore';
 import { requireSettlementAdmin, requireSettlementInvestor } from '@/lib/server/settlement/settlementAuth';
+import { validateCsrfProtection } from '@/lib/server/adminAuth';
 
 const createInvestmentSchema = z.object({
   investorAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid Ethereum/BSC address format'),
@@ -58,6 +59,18 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const csrfCheck = validateCsrfProtection(req);
+    if (!csrfCheck.valid) {
+      return NextResponse.json({ success: false, error: 'CSRF_REJECTED', message: csrfCheck.reason }, { status: 403 });
+    }
+
+    if (process.env.NODE_ENV === 'production' || process.env.OXENIQ_ENV === 'production') {
+      return NextResponse.json(
+        { success: false, error: 'SETTLEMENT_EXECUTION_DISABLED', message: 'Investment settlement creation is disabled in production.' },
+        { status: 403 }
+      );
+    }
+
     const chainIdHeader = req.headers.get('x-chain-id');
     const chainId = chainIdHeader ? parseInt(chainIdHeader, 10) : undefined;
     const sandboxCheck = SettlementPersistentStore.enforceSandboxRestrictions({ chainId });

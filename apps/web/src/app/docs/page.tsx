@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Card } from '../../components/Card';
 import { Badge } from '../../components/Badge';
@@ -17,8 +18,21 @@ import {
   BookOpen
 } from 'lucide-react';
 
-export default function DocsPage() {
-  const [activeTab, setActiveTab] = useState<'whitepaper' | 'contracts' | 'security' | 'developer'>('whitepaper');
+const VALID_TABS = ['whitepaper', 'contracts', 'security', 'developer'] as const;
+type TabType = (typeof VALID_TABS)[number];
+
+function DocsContent() {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab') as TabType;
+  const initialTab = VALID_TABS.includes(tabParam) ? tabParam : 'whitepaper';
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+
+  useEffect(() => {
+    const currentTab = searchParams.get('tab') as TabType;
+    if (currentTab && VALID_TABS.includes(currentTab)) {
+      setActiveTab(currentTab);
+    }
+  }, [searchParams]);
 
   return (
     <div className="space-y-10">
@@ -28,7 +42,6 @@ export default function DocsPage() {
           <h1 className="text-xs uppercase font-bold tracking-[0.2em] text-[var(--brand-accent)]">Protocol Documentation</h1>
           <h2 className="text-3xl sm:text-5xl font-extrabold text-white">Whitepaper & Specifications</h2>
           <p className="text-secondary text-sm sm:text-base leading-relaxed">
-            Public technical documentation, cryptographic specifications, smart contract architecture, and developer integration guides for Liora Coin (with legacy OXENIQ contract references preserved).
             Public technical documentation, cryptographic specifications, smart contract architecture, and developer integration guides for LIORA on BNB Smart Chain.
           </p>
         </div>
@@ -270,5 +283,13 @@ export default function DocsPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+export default function DocsPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-secondary">Loading documentation...</div>}>
+      <DocsContent />
+    </Suspense>
   );
 }

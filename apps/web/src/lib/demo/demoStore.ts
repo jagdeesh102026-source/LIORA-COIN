@@ -16,6 +16,7 @@ import {
   AdminCommissionConfig,
   PlatformStats,
 } from './demoTypes';
+import { isTestnetSandboxEnabled } from '../../config/tokenConfig';
 
 const STORAGE_KEY_PREFIX = 'oxeniq_exchange_demo_v2_';
 
@@ -144,7 +145,7 @@ export const DEFAULT_ACTIVE_USER: DemoUser = {
   username: 'trader_alex',
   displayName: 'Alex Mercer',
   email: 'trader@oxeniq.com',
-  password: 'OxeniqDemo2026!',
+  // Demo credentials purged from source code (production uses server PostgreSQL auth only)
   phone: '+1 (555) 789-0123',
   referralCode: 'OX-789421',
   sponsorCode: 'OX-MASTER7',
@@ -162,7 +163,7 @@ export const SEED_USERS: DemoUser[] = [
     username: 'admin_dan',
     displayName: 'Dan Administrator',
     email: 'admin@oxeniq.com',
-    password: 'OxeniqDemo2026!',
+    // Demo credentials purged from source code (production uses server PostgreSQL auth only)
     referralCode: 'OX-GENESIS',
     sponsorCode: null,
     walletAddress: '0x5c7eE67FaBFD34D2cA2a4A87C3d6e530FE1F2477',
@@ -176,7 +177,7 @@ export const SEED_USERS: DemoUser[] = [
     username: 'emily_mentor',
     displayName: 'Emily Mentor',
     email: 'emily.mentor@oxeniq.com',
-    password: 'OxeniqDemo2026!',
+    // Demo credentials purged from source code (production uses server PostgreSQL auth only)
     referralCode: 'OX-MASTER7',
     sponsorCode: 'OX-VIP88',
     walletAddress: '0x32A5FaA9F32d919641D3B4895C918E7F0a109867',
@@ -190,7 +191,7 @@ export const SEED_USERS: DemoUser[] = [
     username: 'david_lead',
     displayName: 'David Lead',
     email: 'david.lead@oxeniq.com',
-    password: 'OxeniqDemo2026!',
+    // Demo credentials purged from source code (production uses server PostgreSQL auth only)
     referralCode: 'OX-VIP88',
     sponsorCode: 'OX-ELITE1',
     walletAddress: '0x71C0a5812Bcf0c6291a57E0e44FaF36A7a90412e',
@@ -204,7 +205,7 @@ export const SEED_USERS: DemoUser[] = [
     username: 'sarah_director',
     displayName: 'Sarah Director',
     email: 'sarah.director@oxeniq.com',
-    password: 'OxeniqDemo2026!',
+    // Demo credentials purged from source code (production uses server PostgreSQL auth only)
     referralCode: 'OX-ELITE1',
     sponsorCode: 'OX-GENESIS',
     walletAddress: '0x18B27a3d9A662363a0eF51A310243C73b8897b6C',
@@ -219,7 +220,7 @@ export const SEED_USERS: DemoUser[] = [
     username: 'michael_k',
     displayName: 'Michael K',
     email: 'michael.k@crypto.org',
-    password: 'OxeniqDemo2026!',
+    // Demo credentials purged from source code (production uses server PostgreSQL auth only)
     referralCode: 'OX-USER101',
     sponsorCode: 'OX-789421',
     walletAddress: '0x498aE722C19c28A8a9134F20E6704Af08C9971D0',
@@ -233,7 +234,7 @@ export const SEED_USERS: DemoUser[] = [
     username: 'lisa_trader',
     displayName: 'Lisa Trader',
     email: 'lisa.trader@defi.io',
-    password: 'OxeniqDemo2026!',
+    // Demo credentials purged from source code (production uses server PostgreSQL auth only)
     referralCode: 'OX-USER102',
     sponsorCode: 'OX-789421',
     walletAddress: '0x8A72F67448B6960Ff3D4DbB497727e4eFa3D1903',
@@ -247,7 +248,7 @@ export const SEED_USERS: DemoUser[] = [
     username: 'kevin_web3',
     displayName: 'Kevin Web3',
     email: 'kevin.web3@blockmail.com',
-    password: 'OxeniqDemo2026!',
+    // Demo credentials purged from source code (production uses server PostgreSQL auth only)
     referralCode: 'OX-USER103',
     sponsorCode: 'OX-789421',
     walletAddress: '0x62B98Fa047a27dE90479Fb4978f8B983d9876FaE',
@@ -261,7 +262,7 @@ export const SEED_USERS: DemoUser[] = [
     username: 'alice_v',
     displayName: 'Alice V',
     email: 'alice.v@invest.net',
-    password: 'OxeniqDemo2026!',
+    // Demo credentials purged from source code (production uses server PostgreSQL auth only)
     referralCode: 'OX-USER201',
     sponsorCode: 'OX-USER101',
     walletAddress: '0x098FcbFa6498B6960412e873Fa9B4a8d29E306aF',
@@ -275,7 +276,7 @@ export const SEED_USERS: DemoUser[] = [
     username: 'brian_t',
     displayName: 'Brian T',
     email: 'brian.t@venture.capital',
-    password: 'OxeniqDemo2026!',
+    // Demo credentials purged from source code (production uses server PostgreSQL auth only)
     referralCode: 'OX-USER202',
     sponsorCode: 'OX-USER102',
     walletAddress: '0x99A8c2Fa9F32d919641D3B4895C918E7F0a10986',
@@ -289,7 +290,7 @@ export const SEED_USERS: DemoUser[] = [
     username: 'charlotte_r',
     displayName: 'Charlotte R',
     email: 'charlotte.r@quantum.tech',
-    password: 'OxeniqDemo2026!',
+    // Demo credentials purged from source code (production uses server PostgreSQL auth only)
     referralCode: 'OX-USER301',
     sponsorCode: 'OX-USER201',
     walletAddress: '0x5C918E7F0a1098679B4a8d29E306aF2A9fC5F35d',
@@ -568,6 +569,13 @@ export class DemoStoreManager {
     usernameOrEmail: string,
     password?: string
   ): { success: boolean; user?: DemoUser; error?: string } {
+    if (!isTestnetSandboxEnabled()) {
+      return {
+        success: false,
+        error: 'Demo authentication is disabled in production. Use server-side account sign-in.',
+      };
+    }
+
     const cleanInput = (usernameOrEmail || '').trim().toLowerCase();
     if (!cleanInput) {
       return { success: false, error: 'Please enter your username or email address.' };
@@ -586,16 +594,16 @@ export class DemoStoreManager {
     if (!existing) {
       return {
         success: false,
-        error: `User "${usernameOrEmail}" not found. For demo access, use "@trader_alex" or register a new demo account.`,
+        error: 'Invalid username or password.',
       };
     }
 
-    // Validate password (allow set password or default demo password 'OxeniqDemo2026!')
-    const validPassword = existing.password || 'OxeniqDemo2026!';
-    if (password.trim() !== validPassword && password.trim() !== 'OxeniqDemo2026!') {
+    // Validate password
+    const validPassword = existing.password;
+    if (!validPassword || password.trim() !== validPassword) {
       return {
         success: false,
-        error: 'Incorrect password. (Hint: Demo password is OxeniqDemo2026!)',
+        error: 'Invalid username or password.',
       };
     }
 
@@ -610,6 +618,13 @@ export class DemoStoreManager {
     phone?: string,
     sponsorCode?: string
   ): { success: boolean; user?: DemoUser; error?: string } {
+    if (!isTestnetSandboxEnabled()) {
+      return {
+        success: false,
+        error: 'Demo registration is disabled in production. Use server-side account registration.',
+      };
+    }
+
     const cleanUsername = (username || '').trim();
     const cleanEmail = (email || '').trim().toLowerCase();
 
@@ -642,7 +657,7 @@ export class DemoStoreManager {
       username: cleanUsername,
       displayName: cleanUsername,
       email: cleanEmail,
-      password: password?.trim() || 'OxeniqDemo2026!',
+      password: password?.trim() || undefined,
       phone: phone?.trim() || undefined,
       referralCode: code,
       sponsorCode: validSponsor,
@@ -1095,7 +1110,7 @@ export class DemoStoreManager {
       username: `member_${randomSuffix}`,
       displayName: `Member ${randomSuffix}`,
       email: `member.${randomSuffix}@trader.io`,
-      password: 'OxeniqDemo2026!',
+      // Demo credentials purged from source code (production uses server PostgreSQL auth only)
       referralCode: newRefCode,
       sponsorCode,
       walletAddress: `0x${Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`,

@@ -16,6 +16,7 @@ import {
   Info
 } from 'lucide-react';
 import { PrelaunchPriceResult, PurchaseQuote, LockedPurchaseRecord, InvestmentLockTier } from '@/lib/prelaunch/prelaunchTypes';
+import { isTestnetSandboxEnabled } from '@/config/tokenConfig';
 
 interface PrelaunchOfferingCardProps {
   userWalletAddress?: string;
@@ -23,9 +24,10 @@ interface PrelaunchOfferingCardProps {
 }
 
 export function PrelaunchOfferingCard({
-  userWalletAddress = '0x71C...demo',
-  userId = 'usr_guest_demo'
+  userWalletAddress,
+  userId,
 }: PrelaunchOfferingCardProps) {
+  const isDevSandbox = isTestnetSandboxEnabled();
   // Price and config state
   const [priceData, setPriceData] = useState<PrelaunchPriceResult | null>(null);
   const [loadingPrice, setLoadingPrice] = useState(true);
@@ -60,10 +62,13 @@ export function PrelaunchOfferingCard({
     }
   };
 
-  // Fetch user's locked purchases
+  // Fetch user's locked purchases (authenticated session only)
   const fetchPurchases = async () => {
+    if (!userId) return;
     try {
-      const res = await fetch(`/api/prelaunch/purchases?userId=${encodeURIComponent(userId)}`);
+      const res = await fetch('/api/prelaunch/purchases', {
+        credentials: 'include',
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.purchases) {
@@ -138,11 +143,26 @@ export function PrelaunchOfferingCard({
     return (amountInUSD / priceNum).toLocaleString('en-US', { maximumFractionDigits: 4 });
   }, [priceData, parsedAmount, amountInUSD]);
 
-  // Request binding 15-minute quote
+  // Request binding 15-minute quote (requires authenticated session; staged in production)
   const handleRequestQuote = async (e: React.FormEvent) => {
     e.preventDefault();
     setQuoteError(null);
     setPurchaseSuccess(null);
+
+    if (!isDevSandbox) {
+      setQuoteError('Pre-launch quote generation and purchases are disabled in production until compliance and gateway activation.');
+      return;
+    }
+
+    if (!userId) {
+      setQuoteError('Please sign in to your investor account before requesting a binding quote.');
+      return;
+    }
+
+    if (!userWalletAddress || !/^0x[a-fA-F0-9]{40}$/.test(userWalletAddress)) {
+      setQuoteError('Please connect a valid Web3 wallet address first.');
+      return;
+    }
 
     if (parsedAmount <= 0) {
       setQuoteError('Please enter a valid investment amount.');
@@ -158,10 +178,10 @@ export function PrelaunchOfferingCard({
       const res = await fetch('/api/prelaunch/quote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           investmentAmount: parsedAmount,
           currency,
-          userId,
           walletAddress: userWalletAddress
         })
       });
@@ -181,8 +201,12 @@ export function PrelaunchOfferingCard({
     }
   };
 
-  // Lock in allocation (Demo / preview execution)
+  // Lock in allocation (Demo / preview execution; blocked in production)
   const handleExecutePurchase = async () => {
+    if (!isDevSandbox) {
+      setQuoteError('Pre-launch purchase execution is disabled in production.');
+      return;
+    }
     if (!activeQuote || activeQuote.isExpired) return;
 
     setIsPurchasing(true);
@@ -190,6 +214,7 @@ export function PrelaunchOfferingCard({
       const res = await fetch('/api/prelaunch/purchases', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           quoteId: activeQuote.quoteId,
           txHash: '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')
@@ -398,10 +423,15 @@ export function PrelaunchOfferingCard({
 
               <button
                 type="submit"
-                disabled={requestingQuote || amountInUSD < 100}
+                disabled={!isDevSandbox || requestingQuote || amountInUSD < 100}
                 className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-bold text-sm shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
               >
-                {requestingQuote ? (
+                {!isDevSandbox ? (
+                  <>
+                    <Lock className="w-4 h-4" />
+                    <span>Pre-Launch Purchases Staged — Disabled in Production</span>
+                  </>
+                ) : requestingQuote ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin" />
                     <span>Calculating Binding Quote...</span>

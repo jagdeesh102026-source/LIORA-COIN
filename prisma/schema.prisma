@@ -760,3 +760,81 @@ model PricingScheduleConfig {
 
   @@map("pricing_schedule_configs")
 }
+
+// ============================================================================
+// 10. MANUAL SETTLEMENT PERSISTENCE & IMMUTABLE AUDIT LOGS (PHASE 2)
+// ============================================================================
+
+model InvestmentSettlement {
+  id                                  String                @id
+  investorAddress                     String
+  investorName                        String
+  planId                              String
+  tierNumber                          String
+  planCategory                        String
+  planDisplayName                     String
+  principalINR                        Decimal               @db.Decimal(28, 2)
+  principalUSD                        Decimal               @db.Decimal(28, 2)
+  agreedReturnPercent                 Int
+  agreedCashPayoutINR                 Decimal               @db.Decimal(28, 2)
+  agreedCashPayoutUSD                 Decimal               @db.Decimal(28, 2)
+  contractualSettlementINR            Decimal               @db.Decimal(28, 2)
+  contractualSettlementUSD            Decimal               @db.Decimal(28, 2)
+  multiplierFactor                    Decimal               @db.Decimal(10, 4)
+  termMonths                          Int
+  payoutMonth                         Int
+  settlementPayoutMonth               Int
+  createdAtMs                         BigInt
+  lockEndDateMs                       BigInt
+  payoutDueDateMs                     BigInt
+  initialAllocationPriceINR           String
+  initialAllocationPriceWei           String
+  collateralTokensAllocated           Float
+  originalCollateralTokensFormatted   String
+  originalCollateralTokensBaseUnits   String
+  roundingRemainderWei                String
+  collateralTokenAddress              String
+  collateralCustodyType               String
+  stage                               String
+  stageUpdatedAtMs                    BigInt
+  payoutDispatched                    Json?
+  paymentVerification                 Json?
+  collateralReturned                  Json?
+  dispute                             Json?
+  collateralTxHash                    String?               @unique
+  idempotencyKey                      String?               @unique
+  updatedAt                           DateTime              @updatedAt
+
+  auditLogs                           SettlementAuditEntry[]
+
+  @@index([investorAddress])
+  @@index([stage])
+  @@map("investment_settlements")
+}
+
+model SettlementAuditEntry {
+  id            String               @id
+  investmentId  String
+  timestampMs   BigInt
+  actor         String
+  action        String
+  previousStage String
+  newStage      String
+  details       String
+  referenceId   String?
+
+  settlement    InvestmentSettlement @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+
+  @@index([investmentId])
+  @@index([timestampMs])
+  @@map("settlement_audit_entries")
+}
+
+model SettlementIdempotencyKey {
+  idempotencyKey String   @id
+  operation      String
+  result         Json
+  createdAt      DateTime @default(now())
+
+  @@map("settlement_idempotency_keys")
+}
